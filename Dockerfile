@@ -5,6 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 COPY app.py .
 COPY database.py .
+COPY auth.py .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
