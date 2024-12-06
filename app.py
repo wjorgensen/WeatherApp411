@@ -2,9 +2,19 @@ from flask import Flask, request, jsonify, g, session
 from database import get_db, close_db, init_db_command
 from auth import generate_salt, hash_password, verify_password, login_required
 import sqlite3
+import logging
+import sys
+from werkzeug.serving import run_simple
+from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+
+logging.getLogger('werkzeug').disabled = True
+cli = sys.modules['flask.cli']
+cli.show_server_banner = lambda *x: None
 
 app.teardown_appcontext(close_db)
 app.cli.add_command(init_db_command)
@@ -77,28 +87,24 @@ def get_favorites():
         (g.user_id,)
     ).fetchall()
     
-    return jsonify([dict(row) for row in favorites])
+    return jsonify([dict(row) for row in favorites]), 200
 
 @app.route('/favorites', methods=['POST'])
+@login_required
 def add_favorite():
     if not request.is_json:
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
-    required_fields = ['location_name', 'latitude', 'longitude']
-    
-    if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields"}), 400
-
-    db = get_db()
     try:
+        db = get_db()
         db.execute(
             'INSERT INTO favorite_locations (user_id, location_name, latitude, longitude)'
             ' VALUES (?, ?, ?, ?)',
             (g.user_id, data['location_name'], data['latitude'], data['longitude'])
         )
         db.commit()
-    except sqlite3.Error as e:
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"message": "Location added successfully"}), 201
@@ -113,4 +119,4 @@ def delete_favorite(favorite_id):
     return jsonify({"message": "Location deleted successfully"}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(host='0.0.0.0', debug=False) 
