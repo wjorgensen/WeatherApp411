@@ -5,8 +5,9 @@ from flask.cli import with_appcontext
 
 def get_db():
     if 'db' not in g:
+        db_path = current_app.config.get('DATABASE', 'weather.db')
         g.db = sqlite3.connect(
-            'weather.db',
+            db_path,
             detect_types=sqlite3.PARSE_DECLTYPES
         )
         g.db.row_factory = sqlite3.Row
