@@ -62,6 +62,8 @@ def remove_favorite(location_id):
         return response.status_code == 200
     except:
         return False
+    
+#TODO: Add API call functions for weather
 
 def main():
     username = ""
@@ -149,17 +151,17 @@ def main():
 
         elif userInput == "3":
             print("\nGetting the Current Weather for a Favorite Location...\n")
-            #function call
+            #TODO: function call
             continue
 
         elif userInput == "4":
             print("\nGetting Weather History for a Favorite Location...\n")
-            #function call
+            #TODO: function call
             continue
 
         elif userInput == "5":
             print("\nGetting Weather Forecast for a Favorite Location...\n")
-            #function call
+            #TODO: function call
             continue
 
         elif userInput == "6":
