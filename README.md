@@ -11,7 +11,7 @@
 
 ## To run tests
 1. Clone the repository locally
-2. Navigate to folde
+2. Navigate to folder
 3. ```python3 -m venv venv```
 4. ```source venv/bin/activate```
 5. ```pip install ./requirements.txt```
