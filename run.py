@@ -98,13 +98,13 @@ def main():
             else:
                 print("\nFailed to create account. Username may already exist.\n")
 
-    elif (userInput == "3"):
-        print("Exiting...")
-        time.sleep(1)
-        quit()
-    
-    else:
-        print("Invalid input. Please try again.")
+        elif userInput == "3":
+            print("Exiting...")
+            time.sleep(1)
+            quit()
+        
+        else:
+            print("Invalid input. Please try again.")
 
 
 
