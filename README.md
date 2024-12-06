@@ -9,7 +9,7 @@
 4. ```docker build -t weather-app .```
 5. ```docker run -it weather-app```
 
-## To run tests
+## To run unit tests
 1. Clone the repository locally
 2. Navigate to folder
 3. ```python3 -m venv venv```
@@ -17,6 +17,16 @@
 5. ```pip install ./requirements.txt```
 6. ```python -m pytest unit_tests/test_run.py -v```
 
+## To run smoketest
+1. Clone the repository locally
+2. Navigate to folder
+3. ```python3 -m venv venv```
+4. ```source venv/bin/activate```
+5. ```pip install ./requirements.txt```
+6. ```python3 app.py```
+7. Open another terminal window.
+8. ```chmod +x smoketest.sh```
+9. ```./smoketest.sh```
 
 ## API Routes
 
