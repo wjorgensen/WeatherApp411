@@ -62,6 +62,25 @@ json
   - **Code:** 200
   - **Content:** `{"message": "Logged out successfully"}`
 
+#### Update Password
+- **URL:** `/update-password`
+- **Method:** `POST`
+- **Authentication:** Required
+- **Content-Type:** `application/json`
+- **Request Body:**
+  ```json
+  {
+    "current_password": "string",
+    "new_password": "string"
+  }
+  ```
+- **Success Response:**
+  - **Code:** 200
+  - **Content:** `{"message": "Password updated successfully"}`
+- **Error Responses:**
+  - **Code:** 401 - Current password incorrect or not authenticated
+  - **Code:** 400 - Missing required fields
+
 ### Favorite Locations
 
 #### Get Favorites

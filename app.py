@@ -75,7 +75,7 @@ def register():
     except sqlite3.Error as e:
         return jsonify({"error": str(e)}), 500
 
-    return jsonify({"message": "User registered successfully"}), 201
+    return jsonify({"message": "User registered successfully"}), 200
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -195,7 +195,7 @@ def add_favorite():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    return jsonify({"message": "Location added successfully"}), 201
+    return jsonify({"message": "Location added successfully"}), 200
 
 @app.route('/favorites/<int:favorite_id>', methods=['DELETE'])
 def delete_favorite(favorite_id):
@@ -236,6 +236,61 @@ def health_check():
         "status": "healthy",
         "message": "Service is running"
     }), 200
+
+@app.route('/update-password', methods=['POST'])
+@login_required
+def update_password():
+    """
+    Updates the password for the currently authenticated user.
+    
+    Expected JSON payload:
+        {
+            "current_password": str,
+            "new_password": str
+        }
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"message": "Password updated successfully"}, 200)
+            - Error: ({"error": error_message}, error_code)
+    
+    Requires:
+        - User must be authenticated (@login_required)
+        - Current password must be correct
+    
+    Side-effects:
+        - Updates password_hash and salt in database
+    """
+    if not request.is_json:
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+    
+    data = request.get_json()
+    if not data.get('current_password') or not data.get('new_password'):
+        return jsonify({"error": "Current password and new password are required"}), 400
+
+    db = get_db()
+    user = db.execute(
+        'SELECT * FROM users WHERE id = ?',
+        (g.user_id,)
+    ).fetchone()
+
+    if not verify_password(user['password_hash'], user['salt'], data['current_password']):
+        return jsonify({"error": "Current password is incorrect"}), 401
+
+    # Generate new salt and hash for the new password
+    new_salt = generate_salt()
+    new_password_hash = hash_password(data['new_password'], new_salt)
+
+    try:
+        db.execute(
+            'UPDATE users SET password_hash = ?, salt = ? WHERE id = ?',
+            (new_password_hash, new_salt, g.user_id)
+        )
+        db.commit()
+    except sqlite3.Error as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({"message": "Password updated successfully"}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=False) 
