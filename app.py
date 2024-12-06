@@ -11,7 +11,13 @@ app.secret_key = 'your-secret-key-here'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
-logging.getLogger('werkzeug').disabled = True
+# logging.getLogger('werkzeug').disabled = True
+# Set up basic logging to standard output
+logging.basicConfig(level=logging.INFO)
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
+app.logger.setLevel(logging.INFO)
+
+
 cli = sys.modules['flask.cli']
 cli.show_server_banner = lambda *x: None
 
@@ -28,6 +34,7 @@ def load_logged_in_user():
         - Sets g.user_id to the current user's ID from the session
     """
     g.user_id = session.get('user_id')
+    app.logger.info(f"Session loaded for user ID: {g.user_id}")
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -53,7 +60,9 @@ def register():
         - Creates new user record in database
         - Hashes password with salt
     """
+    app.logger.info("Received registration request")
     if not request.is_json:
+        app.logger.info("Failed registration: Content type must be JSON")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
@@ -70,9 +79,12 @@ def register():
             (data['username'], password_hash, salt)
         )
         db.commit()
+        app.logger.info(f"User {data['username']} registered successfully.")
     except sqlite3.IntegrityError:
+        app.logger.info("Registration failed: Username already exists.")
         return jsonify({"error": "Username already exists"}), 409
     except sqlite3.Error as e:
+        app.logger.info(f"Registration failed: {e}")
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"message": "User registered successfully"}), 200
@@ -97,11 +109,14 @@ def login():
         - Creates new session for authenticated user
         - Sets user_id in session
     """
+    app.logger.info("Attempting to authenticate a user.")
     if not request.is_json:
+        app.logger.info("Login attempt failed due to incorrect content type.")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
     if not data.get('username') or not data.get('password'):
+        app.logger.info("Login attempt failed due to incomplete data.")
         return jsonify({"error": "Username and password are required"}), 400
 
     db = get_db()
@@ -111,12 +126,15 @@ def login():
     ).fetchone()
 
     if user is None:
+        app.logger.info("Login attempt failed due to invalid credentials.")
         return jsonify({"error": "Invalid username or password"}), 401
 
     if not verify_password(user['password_hash'], user['salt'], data['password']):
+        app.logger.info("Login attempt failed due to invalid credentials.")
         return jsonify({"error": "Invalid username or password"}), 401
 
     session['user_id'] = user['id']
+    app.logger.info(f"User logged in: {data['username']}")
     return jsonify({"message": "Login successful"}), 200
 
 @app.route('/logout', methods=['POST'])
@@ -131,7 +149,9 @@ def logout():
     Side-effects:
         - Removes user_id from session
     """
+    app.logger.info("Received logout request")
     session.pop('user_id', None)
+    app.logger.info("User logged out successfully")
     return jsonify({"message": "Logged out successfully"}), 200
 
 @app.route('/favorites', methods=['GET'])
@@ -144,17 +164,27 @@ def get_favorites():
         tuple: (JSON response, HTTP status code)
             - Success: (List of favorite locations, 200)
             - Error: ({"error": "Authentication required"}, 401)
+            - Error: ({"message": "No favorite locations found"}, 200)
+            - Error: ({"error": "Unable to fetch favorites"}, 500)
     
     Requires:
         - User must be authenticated (@login_required)
     """
+    app.logger.info(f"Attempting to retrieve favorite locations for user ID: {g.user_id}")
     db = get_db()
-    favorites = db.execute(
-        'SELECT * FROM favorite_locations WHERE user_id = ?',
-        (g.user_id,)
-    ).fetchall()
-    
-    return jsonify([dict(row) for row in favorites]), 200
+    try:
+        favorites = db.execute(
+            'SELECT * FROM favorite_locations WHERE user_id = ?',
+            (g.user_id,)
+        ).fetchall()
+        if not favorites:
+            app.logger.info("No favorite locations found for user.")
+            return jsonify({"message": "No favorite locations found"}), 200
+        app.logger.info(f"Found {len(favorites)} favorite locations for user.")
+        return jsonify([dict(row) for row in favorites]), 200
+    except sqlite3.Error as e:
+        app.logger.error(f"Unable to fetch favorites: {e}")
+        return jsonify({"error": "Unable to fetch favorites"}), 500
 
 @app.route('/favorites', methods=['POST'])
 @login_required
@@ -180,7 +210,9 @@ def add_favorite():
     Side-effects:
         - Creates new favorite location record in database
     """
+    app.logger.info("Adding a new favorite location for user.")
     if not request.is_json:
+        app.logger.info("Failed to add favorite location: Content type must be JSON")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
@@ -193,8 +225,9 @@ def add_favorite():
         )
         db.commit()
     except Exception as e:
+        app.logger.error(f"Failed to add favorite location: {e}")
         return jsonify({"error": str(e)}), 500
-
+    app.logger.info("Favorite location added successfully.")
     return jsonify({"message": "Location added successfully"}), 200
 
 @app.route('/favorites/<int:favorite_id>', methods=['DELETE'])
@@ -208,6 +241,7 @@ def delete_favorite(favorite_id):
     Returns:
         tuple: (JSON response, HTTP status code)
             - Success: ({"message": "Location deleted successfully"}, 200)
+            - Error: ({"error": "Unable to delete location"}, 500)
     
     Requires:
         - User must be authenticated
@@ -216,12 +250,19 @@ def delete_favorite(favorite_id):
     Side-effects:
         - Removes favorite location record from database
     """
+    app.logger.info(f"Attempting to delete favorite location with ID: {favorite_id} for user ID: {g.user_id}")
     db = get_db()
-    db.execute('DELETE FROM favorite_locations WHERE id = ? AND user_id = ?',
-               (favorite_id, g.user_id)) 
-    db.commit()
-    
-    return jsonify({"message": "Location deleted successfully"}), 200
+    try:
+        result = db.execute('DELETE FROM favorite_locations WHERE id = ? AND user_id = ?', (favorite_id, g.user_id))
+        db.commit()
+        if result.rowcount == 0:
+            app.logger.info("No location found to delete, or location does not belong to the user.")
+            return jsonify({"error": "Location not found or not owned by user"}), 404
+        app.logger.info("Favorite location deleted successfully.")
+        return jsonify({"message": "Location deleted successfully"}), 200
+    except sqlite3.Error as e:
+        app.logger.error(f"Unable to delete location")
+        return jsonify({"error": "Unable to delete location"}), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -261,11 +302,14 @@ def update_password():
     Side-effects:
         - Updates password_hash and salt in database
     """
+    app.logger.info("Attempting to update password for user.")
     if not request.is_json:
+        app.logger.info("Password update failed: Request must be JSON.")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
     if not data.get('current_password') or not data.get('new_password'):
+        app.logger.info("Password update failed: Missing required password fields.")
         return jsonify({"error": "Current password and new password are required"}), 400
 
     db = get_db()
@@ -275,6 +319,7 @@ def update_password():
     ).fetchone()
 
     if not verify_password(user['password_hash'], user['salt'], data['current_password']):
+        app.logger.info("Password update failed: Incorrect current password.")
         return jsonify({"error": "Current password is incorrect"}), 401
 
     # Generate new salt and hash for the new password
@@ -287,7 +332,9 @@ def update_password():
             (new_password_hash, new_salt, g.user_id)
         )
         db.commit()
+        app.logger.info("Password successfully updated for user.")
     except sqlite3.Error as e:
+        app.logger.info(f"Password update failed due to database error: {e}")
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"message": "Password updated successfully"}), 200
