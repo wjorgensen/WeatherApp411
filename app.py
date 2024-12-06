@@ -11,7 +11,7 @@ app.secret_key = 'your-secret-key-here'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
-# logging.getLogger('werkzeug').disabled = True
+logging.getLogger('werkzeug').disabled = True
 # Set up basic logging to standard output
 logging.basicConfig(level=logging.INFO)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
