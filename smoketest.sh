@@ -28,6 +28,21 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
+
+###############################################
+# Health Check
+###############################################
+check_health() {
+  echo "Checking health status..."
+  response=$(curl -s -X GET "$BASE_URL/health")
+  if echo "$response" | grep -q '"status":"healthy"'; then
+    echo "Service is healthy."
+  else
+    echo "Health check failed: $(echo $response | jq -r '.message')"
+    exit 1
+  fi
+}
+
 ###############################################
 # Registration and Login
 ###############################################
@@ -130,7 +145,7 @@ echo "Database cleared successfully and reinitialized."
 ###############################################
 # Execute Tests
 ###############################################
-
+check_health
 # User registration and login flow
 register_user "testuser" "password123"
 login_user "testuser" "password123"
