@@ -101,7 +101,7 @@ while (True):
     elif (userInput == "3"):
         print("Exiting...")
         time.sleep(1)
-        break
+        quit()
     
     else:
         print("Invalid input. Please try again.")
