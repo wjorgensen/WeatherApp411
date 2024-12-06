@@ -222,5 +222,19 @@ def delete_favorite(favorite_id):
     
     return jsonify({"message": "Location deleted successfully"}), 200
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    """
+    Basic health check endpoint to verify service status.
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"status": "healthy", "message": "Service is running"}, 200)
+    """
+    return jsonify({
+        "status": "healthy",
+        "message": "Service is running"
+    }), 200
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=False) 

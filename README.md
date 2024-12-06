@@ -112,6 +112,16 @@ json
 - **Error Response:**
   - **Code:** 401 - Authentication required
 
+
+#### Health Check
+- **URL:** `/health`
+- **Method:** `GET`
+- **Authentication:** Not required
+- **Success Response:**
+  - **Code:** 200
+  - **Content:** `{"status": "healthy", "message": "Service is running"}`
+- **Description:** Simple endpoint to verify the API service is up and running
+
 ## Database Schema
 
 The application uses SQLite with the following schema:
