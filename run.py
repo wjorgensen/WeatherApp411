@@ -95,7 +95,7 @@ def main():
             
             if register_user(username, password):
                 print(f"\nAccount created. Welcome, {username}. What would you like to do?\n")
-                if login_user(username, password):  # Log them in automatically
+                if login_user(username, password): 
                     break
             else:
                 print("\nFailed to create account. Username may already exist.\n")
@@ -166,7 +166,7 @@ def main():
 
         elif userInput == "6":
             print("\nHere are your current locations:\n")
-            if get_favorites(show_weather=False):  # Show all locations first
+            if get_favorites(show_weather=False):  
                 location_id = input("\nEnter the ID number of the location you would like to remove: ")
                 if remove_favorite(location_id):
                     print("\nLocation removed from favorites.\n")
