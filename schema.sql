@@ -2,8 +2,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    salt TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    salt TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS favorite_locations (
@@ -12,7 +11,5 @@ CREATE TABLE IF NOT EXISTS favorite_locations (
     location_name TEXT NOT NULL,
     latitude REAL NOT NULL,
     longitude REAL NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id)
-        ON DELETE CASCADE
 ); 

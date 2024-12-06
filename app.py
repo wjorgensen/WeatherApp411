@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify, g, session
 from database import get_db, close_db, init_db_command
-from auth import generate_salt, hash_password, verify_password, login_required
+from auth import *
 import sqlite3
 import logging
 import sys
-from werkzeug.serving import run_simple
 from datetime import timedelta
 
 app = Flask(__name__)
@@ -21,10 +20,38 @@ app.cli.add_command(init_db_command)
 
 @app.before_request
 def load_logged_in_user():
+    """
+    Loads the user ID from the session before each request.
+    
+    Side-effects:
+        - Sets g.user_id to the current user's ID from the session
+    """
     g.user_id = session.get('user_id')
 
 @app.route('/register', methods=['POST'])
 def register():
+    """
+    Registers a new user with the provided username and password.
+    
+    Expected JSON payload:
+        {
+            "username": str,
+            "password": str
+        }
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"message": "User registered successfully"}, 201)
+            - Error: ({"error": error_message}, error_code)
+    
+    Raises:
+        sqlite3.IntegrityError: If username already exists
+        sqlite3.Error: For other database errors
+    
+    Side-effects:
+        - Creates new user record in database
+        - Hashes password with salt
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
@@ -51,6 +78,24 @@ def register():
 
 @app.route('/login', methods=['POST'])
 def login():
+    """
+    Authenticates a user and creates a new session.
+    
+    Expected JSON payload:
+        {
+            "username": str,
+            "password": str
+        }
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"message": "Login successful"}, 200)
+            - Error: ({"error": error_message}, error_code)
+    
+    Side-effects:
+        - Creates new session for authenticated user
+        - Sets user_id in session
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
@@ -75,12 +120,33 @@ def login():
 
 @app.route('/logout', methods=['POST'])
 def logout():
+    """
+    Logs out the current user by removing their session.
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"message": "Logged out successfully"}, 200)
+    
+    Side-effects:
+        - Removes user_id from session
+    """
     session.pop('user_id', None)
     return jsonify({"message": "Logged out successfully"}), 200
 
 @app.route('/favorites', methods=['GET'])
 @login_required
 def get_favorites():
+    """
+    Retrieves all favorite locations for the authenticated user.
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: (List of favorite locations, 200)
+            - Error: ({"error": "Authentication required"}, 401)
+    
+    Requires:
+        - User must be authenticated (@login_required)
+    """
     db = get_db()
     favorites = db.execute(
         'SELECT * FROM favorite_locations WHERE user_id = ?',
@@ -92,6 +158,27 @@ def get_favorites():
 @app.route('/favorites', methods=['POST'])
 @login_required
 def add_favorite():
+    """
+    Adds a new favorite location for the authenticated user.
+    
+    Expected JSON payload:
+        {
+            "location_name": str,
+            "latitude": float,
+            "longitude": float
+        }
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"message": "Location added successfully"}, 201)
+            - Error: ({"error": error_message}, error_code)
+    
+    Requires:
+        - User must be authenticated (@login_required)
+    
+    Side-effects:
+        - Creates new favorite location record in database
+    """
     if not request.is_json:
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
@@ -111,6 +198,23 @@ def add_favorite():
 
 @app.route('/favorites/<int:favorite_id>', methods=['DELETE'])
 def delete_favorite(favorite_id):
+    """
+    Deletes a specific favorite location for the authenticated user.
+    
+    Args:
+        favorite_id (int): The ID of the favorite location to delete
+    
+    Returns:
+        tuple: (JSON response, HTTP status code)
+            - Success: ({"message": "Location deleted successfully"}, 200)
+    
+    Requires:
+        - User must be authenticated
+        - Favorite location must belong to the authenticated user
+    
+    Side-effects:
+        - Removes favorite location record from database
+    """
     db = get_db()
     db.execute('DELETE FROM favorite_locations WHERE id = ? AND user_id = ?',
                (favorite_id, g.user_id)) 

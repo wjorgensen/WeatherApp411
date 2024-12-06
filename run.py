@@ -1,6 +1,5 @@
 import time
 import requests
-import json
 from requests.sessions import Session
 from getpass import getpass
 
@@ -68,7 +67,7 @@ def main():
     username = ""
     password = ""
     
-    print("Welcome to your Weather-Location Manager. Would you like to Login or Create an Account?")
+    print("\nWelcome to your Weather-Location Manager.\nWould you like to Login or Create an Account?\n")
     
     while (True):
         print("Menu:")
@@ -77,27 +76,27 @@ def main():
         print(" 3. Exit")
         userInput = input("Enter the number of the action you would like to perform: ")
 
-        if (userInput == "1"):
-            username = input("Username: ")
+        if userInput == "1":
+            username = input("\nUsername: ")
             password = getpass("Password: ")
             
             if login_user(username, password):
-                print("Welcome, " + username + ". What would you like to do?")
+                print(f"\nWelcome, {username}. What would you like to do?\n")
                 break
             else:
-                print("Username or Password incorrect. Please try again.")
+                print("\nUsername or Password incorrect. Please try again.\n")
 
-        elif (userInput == "2"):
-            print("Enter a username and password to create an account.")
+        elif userInput == "2":
+            print("\nEnter a username and password to create an account.\n")
             username = input("Username: ")
             password = getpass("Password: ")
             
             if register_user(username, password):
-                print("Account created. Welcome, " + username + ". What would you like to do?")
+                print(f"\nAccount created. Welcome, {username}. What would you like to do?\n")
                 if login_user(username, password):  # Log them in automatically
                     break
             else:
-                print("Failed to create account. Username may already exist.")
+                print("\nFailed to create account. Username may already exist.\n")
 
     elif (userInput == "3"):
         print("Exiting...")
@@ -121,66 +120,65 @@ def main():
         print(" 7. Exit and Logout")
 
         userInput = input("Enter the number of the action you would like to perform: ")
-        if (userInput == "1"):
-            location = input("Enter the name of the location you'd like to favorite: ")
+        if userInput == "1":
+            location = input("\nEnter the name of the location you'd like to favorite: ")
             latitude = input("Enter the latitude (e.g., 40.7128): ")
             longitude = input("Enter the longitude (e.g., -74.0060): ")
             
             if add_favorite(location, latitude, longitude):
-                print("Location added to favorites.")
+                print("\nLocation added to favorites.\n")
             else:
-                print("Failed to add location to favorites.")
+                print("\nFailed to add location to favorites.\n")
             continue
 
-        elif (userInput == "2"):
-            while (True):
-                yesNo2 = input("Would you like to view the current weather for each location as well? Y/N\nEnter Y or N: ").upper()
+        elif userInput == "2":
+            while True:
+                yesNo2 = input("\nWould you like to view the current weather for each location as well? Y/N\nEnter Y or N: ").upper()
                 if yesNo2 in ["Y", "N"]:
                     if yesNo2 == "Y":
-                        print("Getting All Favorite Locations and their Current Weather...")
+                        print("\nGetting All Favorite Locations and their Current Weather...\n")
                         get_favorites(show_weather=True)
                         break
                     else:
-                        print("Getting All Favorite Locations...")
+                        print("\nGetting All Favorite Locations...\n")
                         get_favorites(show_weather=False)
                         break
                 else:
-                    print("Invalid input. Please enter Y or N.")
+                    print("\nInvalid input. Please enter Y or N.\n")
             continue
 
-
-        elif (userInput == "3"):
-            print("Getting the Current Weather for a Favorite Location...")
+        elif userInput == "3":
+            print("\nGetting the Current Weather for a Favorite Location...\n")
             #function call
             continue
 
-        elif (userInput == "4"):
-            print("Getting Weather History for a Favorite Location...")
+        elif userInput == "4":
+            print("\nGetting Weather History for a Favorite Location...\n")
             #function call
             continue
 
-        elif (userInput == "5"):
-            print("Getting Weather Forecast for a Favorite Location...")
+        elif userInput == "5":
+            print("\nGetting Weather Forecast for a Favorite Location...\n")
             #function call
             continue
 
-        elif (userInput == "6"):
-            print("\nHere are your current locations:")
+        elif userInput == "6":
+            print("\nHere are your current locations:\n")
             if get_favorites(show_weather=False):  # Show all locations first
                 location_id = input("\nEnter the ID number of the location you would like to remove: ")
                 if remove_favorite(location_id):
-                    print("\nLocation removed from favorites.")
+                    print("\nLocation removed from favorites.\n")
                 else:
-                    print("\nFailed to remove location. Please make sure you entered a valid ID number.")
+                    print("\nFailed to remove location. Please make sure you entered a valid ID number.\n")
             continue
 
-        elif (userInput == "7"):
-            print("Exiting...")
+        elif userInput == "7":
+            print("\nExiting...\n")
             time.sleep(1)
             break
 
         else:
-            print("Invalid input. Please try again.")
+            print("\nInvalid input. Please try again.\n")
 
 if __name__ == '__main__':
     main()
