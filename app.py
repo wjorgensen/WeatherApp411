@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, g, session
-from database import get_db, close_db, init_db_command
+from database import get_db, close_db, init_db_command, clear_db_command
 from auth import *
 import sqlite3
 import logging
@@ -17,6 +17,7 @@ cli.show_server_banner = lambda *x: None
 
 app.teardown_appcontext(close_db)
 app.cli.add_command(init_db_command)
+app.cli.add_command(clear_db_command)
 
 @app.before_request
 def load_logged_in_user():
