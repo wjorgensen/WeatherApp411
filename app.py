@@ -339,5 +339,274 @@ def update_password():
 
     return jsonify({"message": "Password updated successfully"}), 200
 
+@app.route('/weather/current/<int:location_id>', methods=['GET', 'POST'])
+@login_required
+def current_weather(location_id):
+    """
+    Get or store current weather for a location.
+    """
+    db = get_db()
+    location = db.execute(
+        'SELECT * FROM favorite_locations WHERE id = ? AND user_id = ?',
+        (location_id, g.user_id)
+    ).fetchone()
+    
+    if not location:
+        return jsonify({"error": "Location not found"}), 404
+
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+        
+        data = request.get_json()
+        current = data.get('current', {})
+        
+        try:
+            db.execute('''
+                INSERT INTO current_weather 
+                (location_id, timestamp, temperature, feels_like, pressure, 
+                humidity, wind_speed, wind_deg, description, icon)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                location_id,
+                current.get('dt'),
+                current.get('temp'),
+                current.get('feels_like'),
+                current.get('pressure'),
+                current.get('humidity'),
+                current.get('wind_speed'),
+                current.get('wind_deg'),
+                current.get('weather', [{}])[0].get('description'),
+                current.get('weather', [{}])[0].get('icon')
+            ))
+            db.commit()
+            return jsonify({"message": "Weather data stored successfully"}), 201
+        except sqlite3.Error as e:
+            return jsonify({"error": str(e)}), 500
+    
+    # GET request - retrieve latest weather data
+    weather = db.execute('''
+        SELECT * FROM current_weather 
+        WHERE location_id = ? 
+        ORDER BY timestamp DESC LIMIT 1
+    ''', (location_id,)).fetchone()
+    
+    return jsonify(dict(weather) if weather else {"error": "No weather data found"}), 200
+
+@app.route('/weather/forecast/<int:location_id>', methods=['GET', 'POST'])
+@login_required
+def weather_forecast(location_id):
+    """
+    Get or store weather forecast for a location.
+    """
+    db = get_db()
+    location = db.execute(
+        'SELECT * FROM favorite_locations WHERE id = ? AND user_id = ?',
+        (location_id, g.user_id)
+    ).fetchone()
+    
+    if not location:
+        return jsonify({"error": "Location not found"}), 404
+
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+        
+        data = request.get_json()
+        current_time = data.get('current', {}).get('dt')
+        
+        try:
+            for daily in data.get('daily', []):
+                db.execute('''
+                    INSERT INTO weather_forecast 
+                    (location_id, timestamp, forecast_timestamp, temperature, 
+                    feels_like, pressure, humidity, wind_speed, wind_deg, 
+                    description, icon)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    location_id,
+                    current_time,
+                    daily.get('dt'),
+                    daily.get('temp', {}).get('day'),
+                    daily.get('feels_like', {}).get('day'),
+                    daily.get('pressure'),
+                    daily.get('humidity'),
+                    daily.get('wind_speed'),
+                    daily.get('wind_deg'),
+                    daily.get('weather', [{}])[0].get('description'),
+                    daily.get('weather', [{}])[0].get('icon')
+                ))
+            db.commit()
+            return jsonify({"message": "Forecast data stored successfully"}), 201
+        except sqlite3.Error as e:
+            return jsonify({"error": str(e)}), 500
+    
+    # GET request - retrieve latest forecast
+    forecasts = db.execute('''
+        SELECT * FROM weather_forecast 
+        WHERE location_id = ? 
+        ORDER BY timestamp DESC, forecast_timestamp ASC
+        LIMIT 7
+    ''', (location_id,)).fetchall()
+    
+    return jsonify([dict(f) for f in forecasts]), 200
+
+@app.route('/weather/history/<int:location_id>', methods=['GET', 'POST'])
+@login_required
+def weather_history(location_id):
+    """
+    Get or store weather history for a location.
+    """
+    db = get_db()
+    location = db.execute(
+        'SELECT * FROM favorite_locations WHERE id = ? AND user_id = ?',
+        (location_id, g.user_id)
+    ).fetchone()
+    
+    if not location:
+        return jsonify({"error": "Location not found"}), 404
+
+    if request.method == 'POST':
+        if not request.is_json:
+            return jsonify({"error": "Content-Type must be application/json"}), 400
+        
+        data = request.get_json()
+        
+        try:
+            for hourly in data.get('hourly', []):
+                db.execute('''
+                    INSERT INTO weather_history 
+                    (location_id, timestamp, temperature, feels_like, 
+                    pressure, humidity, wind_speed, wind_deg, description, icon)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    location_id,
+                    hourly.get('dt'),
+                    hourly.get('temp'),
+                    hourly.get('feels_like'),
+                    hourly.get('pressure'),
+                    hourly.get('humidity'),
+                    hourly.get('wind_speed'),
+                    hourly.get('wind_deg'),
+                    hourly.get('weather', [{}])[0].get('description'),
+                    hourly.get('weather', [{}])[0].get('icon')
+                ))
+            db.commit()
+            return jsonify({"message": "Historical data stored successfully"}), 201
+        except sqlite3.Error as e:
+            return jsonify({"error": str(e)}), 500
+    
+    history = db.execute('''
+        SELECT * FROM weather_history 
+        WHERE location_id = ? 
+        ORDER BY timestamp DESC
+        LIMIT 24
+    ''', (location_id,)).fetchall()
+    
+    return jsonify([dict(h) for h in history]), 200
+
+@app.route('/weather/current/<int:location_id>', methods=['POST'])
+@login_required
+def store_current_weather(location_id):
+    """Store current weather data for a location."""
+    if not request.is_json:
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+    
+    data = request.get_json()
+    
+    try:
+        db = get_db()
+        db.execute('''
+            INSERT INTO current_weather 
+            (location_id, timestamp, temperature, feels_like, pressure, 
+            humidity, wind_speed, wind_deg, description, icon)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            location_id,
+            data.get('dt'),
+            data.get('temp'),
+            data.get('feels_like'),
+            data.get('pressure'),
+            data.get('humidity'),
+            data.get('wind_speed'),
+            data.get('wind_deg'),
+            data.get('weather', [{}])[0].get('description'),
+            data.get('weather', [{}])[0].get('icon')
+        ))
+        db.commit()
+        return jsonify({"message": "Weather data stored successfully"}), 201
+    except sqlite3.Error as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/weather/forecast/<int:location_id>', methods=['POST'])
+@login_required
+def store_weather_forecast(location_id):
+    """Store weather forecast data for a location."""
+    if not request.is_json:
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+    
+    data = request.get_json()
+    db = get_db()
+    
+    try:
+        for daily in data.get('daily', []):
+            db.execute('''
+                INSERT INTO weather_forecast 
+                (location_id, timestamp, forecast_timestamp, temperature, 
+                feels_like, pressure, humidity, wind_speed, wind_deg, 
+                description, icon)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                location_id,
+                data.get('current', {}).get('dt'),
+                daily.get('dt'),
+                daily.get('temp', {}).get('day'),
+                daily.get('feels_like', {}).get('day'),
+                daily.get('pressure'),
+                daily.get('humidity'),
+                daily.get('wind_speed'),
+                daily.get('wind_deg'),
+                daily.get('weather', [{}])[0].get('description'),
+                daily.get('weather', [{}])[0].get('icon')
+            ))
+        db.commit()
+        return jsonify({"message": "Forecast data stored successfully"}), 201
+    except sqlite3.Error as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/weather/history/<int:location_id>', methods=['POST'])
+@login_required
+def store_weather_history(location_id):
+    """Store weather history data for a location."""
+    if not request.is_json:
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+    
+    data = request.get_json()
+    db = get_db()
+    
+    try:
+        for hourly in data.get('hourly', []):
+            db.execute('''
+                INSERT INTO weather_history 
+                (location_id, timestamp, temperature, feels_like, 
+                pressure, humidity, wind_speed, wind_deg, description, icon)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                location_id,
+                hourly.get('dt'),
+                hourly.get('temp'),
+                hourly.get('feels_like'),
+                hourly.get('pressure'),
+                hourly.get('humidity'),
+                hourly.get('wind_speed'),
+                hourly.get('wind_deg'),
+                hourly.get('weather', [{}])[0].get('description'),
+                hourly.get('weather', [{}])[0].get('icon')
+            ))
+        db.commit()
+        return jsonify({"message": "Historical data stored successfully"}), 201
+    except sqlite3.Error as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=False) 

@@ -62,8 +62,87 @@ def remove_favorite(location_id):
         return response.status_code == 200
     except:
         return False
+
+def get_current_weather(location_id):
+    """Get current weather for a favorite location."""
+    try:
+        response = session.get(f"{BASE_URL}/weather/current/{location_id}")
+        if response.status_code == 200:
+            weather = response.json()
+            if 'error' not in weather:
+                print("\nCurrent Weather:")
+                print(f"Temperature: {weather['temperature']}°K")
+                print(f"Feels Like: {weather['feels_like']}°K")
+                print(f"Description: {weather['description']}")
+                print(f"Humidity: {weather['humidity']}%")
+                print(f"Wind Speed: {weather['wind_speed']} m/s")
+                return True
+            else:
+                weather_data = get_weather_api_data(location_id)  # TODO: Implement this function to call API and return JSON
+                if weather_data:
+                    response = session.post(f"{BASE_URL}/weather/current/{location_id}", 
+                                          json=weather_data)
+                    return response.status_code == 201
+                return False
+        return False
+    except Exception as e:
+        print(f"\nError getting weather: {str(e)}")
+        return False
+
+def get_weather_forecast(location_id):
+    """Get weather forecast for a favorite location."""
+    try:
+        response = session.get(f"{BASE_URL}/weather/forecast/{location_id}")
+        if response.status_code == 200:
+            forecasts = response.json()
+            if forecasts and not isinstance(forecasts, dict):
+                print("\nWeather Forecast:")
+                for forecast in forecasts:
+                    print(f"\nDate: {time.strftime('%Y-%m-%d', time.localtime(forecast['forecast_timestamp']))}")
+                    print(f"Temperature: {forecast['temperature']}°K")
+                    print(f"Description: {forecast['description']}")
+                    print("-------------------")
+                return True
+            else:
+                forecast_data = get_forecast_api_data(location_id)  # TODO: Implement this function to call API and return JSON
+                if forecast_data:
+                    response = session.post(f"{BASE_URL}/weather/forecast/{location_id}", 
+                                          json=forecast_data)
+                    return response.status_code == 201
+                return False
+        return False
+    except Exception as e:
+        print(f"\nError getting forecast: {str(e)}")
+        return False
+
+def get_weather_history(location_id):
+    """Get weather history for a favorite location."""
+    try:
+        response = session.get(f"{BASE_URL}/weather/history/{location_id}")
+        if response.status_code == 200:
+            history = response.json()
+            if history and not isinstance(history, dict):
+                print("\nWeather History:")
+                for record in history:
+                    print(f"\nTime: {time.strftime('%Y-%m-%d %H:%M', time.localtime(record['timestamp']))}")
+                    print(f"Temperature: {record['temperature']}°K")
+                    print(f"Description: {record['description']}")
+                    print("-------------------")
+                return True
+            else:
+                history_data = get_history_api_data(location_id) # TODO: Implement this function to call API and return JSON
+                if history_data:
+                    response = session.post(f"{BASE_URL}/weather/history/{location_id}", 
+                                          json=history_data)
+                    return response.status_code == 201
+                return False
+        return False
+    except Exception as e:
+        print(f"\nError getting history: {str(e)}")
+        return False
     
-#TODO: Add API call functions for weather
+# TODO: Add API call functions for weather
+
 
 def main():
     username = ""
@@ -150,18 +229,24 @@ def main():
             continue
 
         elif userInput == "3":
-            print("\nGetting the Current Weather for a Favorite Location...\n")
-            #TODO: function call
+            print("\nHere are your current locations:\n")
+            if get_favorites(show_weather=False):
+                location_id = input("\nEnter the ID number of the location: ")
+                get_current_weather(location_id)
             continue
 
         elif userInput == "4":
-            print("\nGetting Weather History for a Favorite Location...\n")
-            #TODO: function call
+            print("\nHere are your current locations:\n")
+            if get_favorites(show_weather=False):
+                location_id = input("\nEnter the ID number of the location: ")
+                get_weather_history(location_id)
             continue
 
         elif userInput == "5":
-            print("\nGetting Weather Forecast for a Favorite Location...\n")
-            #TODO: function call
+            print("\nHere are your current locations:\n")
+            if get_favorites(show_weather=False):
+                location_id = input("\nEnter the ID number of the location: ")
+                get_weather_forecast(location_id)
             continue
 
         elif userInput == "6":

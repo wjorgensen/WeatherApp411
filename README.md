@@ -141,6 +141,200 @@ json
 - **Error Response:**
   - **Code:** 401 - Authentication required
 
+### Weather Data
+
+#### Get Current Weather
+- **URL:** `/weather/current/<location_id>`
+- **Method:** `GET`
+- **Authentication:** Required
+- **Success Response:**
+  - **Code:** 200
+  - **Content:** Current weather data
+  ```json
+  {
+    "id": "integer",
+    "location_id": "integer",
+    "timestamp": "integer",
+    "temperature": "float",
+    "feels_like": "float",
+    "pressure": "integer",
+    "humidity": "integer",
+    "wind_speed": "float",
+    "wind_deg": "integer",
+    "description": "string",
+    "icon": "string"
+  }
+  ```
+- **Error Response:**
+  - **Code:** 404 - Location not found
+  - **Code:** 401 - Authentication required
+
+#### Store Current Weather
+- **URL:** `/weather/current/<location_id>`
+- **Method:** `POST`
+- **Authentication:** Required
+- **Content-Type:** `application/json`
+- **Request Body:**
+  ```json
+  {
+    "current": {
+      "dt": "integer",
+      "temp": "float",
+      "feels_like": "float",
+      "pressure": "integer",
+      "humidity": "integer",
+      "wind_speed": "float",
+      "wind_deg": "integer",
+      "weather": [
+        {
+          "description": "string",
+          "icon": "string"
+        }
+      ]
+    }
+  }
+  ```
+- **Success Response:**
+  - **Code:** 201
+  - **Content:** `{"message": "Weather data stored successfully"}`
+- **Error Response:**
+  - **Code:** 404 - Location not found
+  - **Code:** 401 - Authentication required
+  - **Code:** 400 - Invalid request format
+
+#### Get Weather Forecast
+- **URL:** `/weather/forecast/<location_id>`
+- **Method:** `GET`
+- **Authentication:** Required
+- **Success Response:**
+  - **Code:** 200
+  - **Content:** Array of forecast data (7 days)
+  ```json
+  [
+    {
+      "id": "integer",
+      "location_id": "integer",
+      "timestamp": "integer",
+      "forecast_timestamp": "integer",
+      "temperature": "float",
+      "feels_like": "float",
+      "pressure": "integer",
+      "humidity": "integer",
+      "wind_speed": "float",
+      "wind_deg": "integer",
+      "description": "string",
+      "icon": "string"
+    }
+  ]
+  ```
+- **Error Response:**
+  - **Code:** 404 - Location not found
+  - **Code:** 401 - Authentication required
+
+#### Store Weather Forecast
+- **URL:** `/weather/forecast/<location_id>`
+- **Method:** `POST`
+- **Authentication:** Required
+- **Content-Type:** `application/json`
+- **Request Body:**
+  ```json
+  {
+    "current": {
+      "dt": "integer"
+    },
+    "daily": [
+      {
+        "dt": "integer",
+        "temp": {
+          "day": "float"
+        },
+        "feels_like": {
+          "day": "float"
+        },
+        "pressure": "integer",
+        "humidity": "integer",
+        "wind_speed": "float",
+        "wind_deg": "integer",
+        "weather": [
+          {
+            "description": "string",
+            "icon": "string"
+          }
+        ]
+      }
+    ]
+  }
+  ```
+- **Success Response:**
+  - **Code:** 201
+  - **Content:** `{"message": "Forecast data stored successfully"}`
+- **Error Response:**
+  - **Code:** 404 - Location not found
+  - **Code:** 401 - Authentication required
+  - **Code:** 400 - Invalid request format
+
+#### Get Weather History
+- **URL:** `/weather/history/<location_id>`
+- **Method:** `GET`
+- **Authentication:** Required
+- **Success Response:**
+  - **Code:** 200
+  - **Content:** Array of historical weather data (24 hours)
+  ```json
+  [
+    {
+      "id": "integer",
+      "location_id": "integer",
+      "timestamp": "integer",
+      "temperature": "float",
+      "feels_like": "float",
+      "pressure": "integer",
+      "humidity": "integer",
+      "wind_speed": "float",
+      "wind_deg": "integer",
+      "description": "string",
+      "icon": "string"
+    }
+  ]
+  ```
+- **Error Response:**
+  - **Code:** 404 - Location not found
+  - **Code:** 401 - Authentication required
+
+#### Store Weather History
+- **URL:** `/weather/history/<location_id>`
+- **Method:** `POST`
+- **Authentication:** Required
+- **Content-Type:** `application/json`
+- **Request Body:**
+  ```json
+  {
+    "hourly": [
+      {
+        "dt": "integer",
+        "temp": "float",
+        "feels_like": "float",
+        "pressure": "integer",
+        "humidity": "integer",
+        "wind_speed": "float",
+        "wind_deg": "integer",
+        "weather": [
+          {
+            "description": "string",
+            "icon": "string"
+          }
+        ]
+      }
+    ]
+  }
+  ```
+- **Success Response:**
+  - **Code:** 201
+  - **Content:** `{"message": "Historical data stored successfully"}`
+- **Error Response:**
+  - **Code:** 404 - Location not found
+  - **Code:** 401 - Authentication required
+  - **Code:** 400 - Invalid request format
 
 #### Health Check
 - **URL:** `/health`
