@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS favorite_locations (
     user_id INTEGER NOT NULL,
     location_name TEXT NOT NULL,
     latitude REAL NOT NULL,
-    longitude REAL NOT NULL,
+    longitude REAL NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS current_weather (

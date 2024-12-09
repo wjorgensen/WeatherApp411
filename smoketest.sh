@@ -146,13 +146,16 @@ echo "Database cleared successfully and reinitialized."
 # Execute Tests
 ###############################################
 check_health
-# User registration and login flow
+
 register_user "testuser" "password123"
 login_user "testuser" "password123"
 add_favorite "Paris" 48.8584 2.2945
 add_favorite "New York City" 42.3454 10.2945
 get_favorites
 delete_favorite 1
+get_favorites
+add_favorite "Boston" 42.8584 8.2945
+get_favorites
 logout_user
 
 echo "All tests passed successfully!"
