@@ -345,6 +345,7 @@ def current_weather(location_id):
     """
     Get or store current weather for a location.
     """
+    app.logger.info(f"Retrieving or storing current weather for location ID: {location_id}")
     db = get_db()
     location = db.execute(
         'SELECT * FROM favorite_locations WHERE id = ? AND user_id = ?',
@@ -352,6 +353,7 @@ def current_weather(location_id):
     ).fetchone()
     
     if not location:
+        app.logger.info("Error: Location not found.")
         return jsonify({"error": "Location not found"}), 404
 
     if request.method == 'POST':
@@ -362,6 +364,7 @@ def current_weather(location_id):
         current = data.get('current', {})
         
         try:
+            app.logger.info("Storing current weather data.")
             db.execute('''
                 INSERT INTO current_weather 
                 (location_id, timestamp, temperature, feels_like, pressure, 
@@ -380,8 +383,10 @@ def current_weather(location_id):
                 current.get('weather', [{}])[0].get('icon')
             ))
             db.commit()
+            app.logger.info("Weather data stored successfully.")
             return jsonify({"message": "Weather data stored successfully"}), 201
         except sqlite3.Error as e:
+            app.logger.error(f"Error storing weather data: {e}")
             return jsonify({"error": str(e)}), 500
     
     # GET request - retrieve latest weather data
@@ -390,7 +395,7 @@ def current_weather(location_id):
         WHERE location_id = ? 
         ORDER BY timestamp DESC LIMIT 1
     ''', (location_id,)).fetchone()
-    
+    app.logger.info("Weather data retrieved successfully.")
     return jsonify(dict(weather) if weather else {"error": "No weather data found"}), 200
 
 @app.route('/weather/forecast/<int:location_id>', methods=['GET', 'POST'])
@@ -399,6 +404,7 @@ def weather_forecast(location_id):
     """
     Get or store weather forecast for a location.
     """
+    app.logger.info(f"Retrieving or storing weather forecast for location ID: {location_id}")
     db = get_db()
     location = db.execute(
         'SELECT * FROM favorite_locations WHERE id = ? AND user_id = ?',
@@ -406,16 +412,19 @@ def weather_forecast(location_id):
     ).fetchone()
     
     if not location:
+        app.logger.info("Error: Location not found.")
         return jsonify({"error": "Location not found"}), 404
 
     if request.method == 'POST':
         if not request.is_json:
+            app.logger.info("Failed to store forecast data: Content type must be JSON")
             return jsonify({"error": "Content-Type must be application/json"}), 400
         
         data = request.get_json()
         current_time = data.get('current', {}).get('dt')
         
         try:
+            app.logger.info("Storing forecast data.")
             for daily in data.get('daily', []):
                 db.execute('''
                     INSERT INTO weather_forecast 
@@ -437,18 +446,21 @@ def weather_forecast(location_id):
                     daily.get('weather', [{}])[0].get('icon')
                 ))
             db.commit()
+            app.logger.info("Forecast data stored successfully.")
             return jsonify({"message": "Forecast data stored successfully"}), 201
         except sqlite3.Error as e:
+            app.logger.info(f"Error storing forecast data: {e}")
             return jsonify({"error": str(e)}), 500
     
     # GET request - retrieve latest forecast
+    app.logger.info("Retrieving forecast data.")
     forecasts = db.execute('''
         SELECT * FROM weather_forecast 
         WHERE location_id = ? 
         ORDER BY timestamp DESC, forecast_timestamp ASC
         LIMIT 7
     ''', (location_id,)).fetchall()
-    
+    app.logger.info("Forecast data retrieved successfully.")
     return jsonify([dict(f) for f in forecasts]), 200
 
 @app.route('/weather/history/<int:location_id>', methods=['GET', 'POST'])
@@ -457,6 +469,7 @@ def weather_history(location_id):
     """
     Get or store weather history for a location.
     """
+    app.logger.info(f"Retrieving or storing weather history for location ID: {location_id}")
     db = get_db()
     location = db.execute(
         'SELECT * FROM favorite_locations WHERE id = ? AND user_id = ?',
@@ -464,10 +477,13 @@ def weather_history(location_id):
     ).fetchone()
     
     if not location:
+        app.logger.info("Error: Location not found.")
         return jsonify({"error": "Location not found"}), 404
 
     if request.method == 'POST':
+        app.logger.info("Storing historical data.")
         if not request.is_json:
+            app.logger.info("Failed to store historical data: Content type must be JSON")
             return jsonify({"error": "Content-Type must be application/json"}), 400
         
         data = request.get_json()
@@ -492,29 +508,36 @@ def weather_history(location_id):
                     hourly.get('weather', [{}])[0].get('icon')
                 ))
             db.commit()
+            app.logger.info("Historical data stored successfully.")
             return jsonify({"message": "Historical data stored successfully"}), 201
         except sqlite3.Error as e:
+            app.logger.info(f"Error storing historical data: {e}")
             return jsonify({"error": str(e)}), 500
     
+    app.logger.info("Retrieving historical data.")
     history = db.execute('''
         SELECT * FROM weather_history 
         WHERE location_id = ? 
         ORDER BY timestamp DESC
         LIMIT 24
     ''', (location_id,)).fetchall()
-    
+    app.logger.info("Historical data retrieved successfully.")
     return jsonify([dict(h) for h in history]), 200
 
 @app.route('/weather/current/<int:location_id>', methods=['POST'])
 @login_required
 def store_current_weather(location_id):
     """Store current weather data for a location."""
+    app.logger.info(f"Storing current weather data for location ID: {location_id}")
     if not request.is_json:
+        app.logger.info("Failed to store weather data: Content type must be JSON")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
     
+    app.logger.info("Storing current weather data.")
     try:
+        
         db = get_db()
         db.execute('''
             INSERT INTO current_weather 
@@ -534,20 +557,25 @@ def store_current_weather(location_id):
             data.get('weather', [{}])[0].get('icon')
         ))
         db.commit()
+        app.logger.info("Weather data stored successfully.")
         return jsonify({"message": "Weather data stored successfully"}), 201
     except sqlite3.Error as e:
+        app.logger.info(f"Error storing weather data: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/weather/forecast/<int:location_id>', methods=['POST'])
 @login_required
 def store_weather_forecast(location_id):
     """Store weather forecast data for a location."""
+    app.logger.info(f"Storing forecast data for location ID: {location_id}")
     if not request.is_json:
+        app.logger.info("Failed to store forecast data: Content type must be JSON")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
     db = get_db()
     
+    app.logger.info("Storing forecast data.")
     try:
         for daily in data.get('daily', []):
             db.execute('''
@@ -570,20 +598,25 @@ def store_weather_forecast(location_id):
                 daily.get('weather', [{}])[0].get('icon')
             ))
         db.commit()
+        app.logger.info("Forecast data stored successfully.")
         return jsonify({"message": "Forecast data stored successfully"}), 201
     except sqlite3.Error as e:
+        app.logger.info(f"Error storing forecast data: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/weather/history/<int:location_id>', methods=['POST'])
 @login_required
 def store_weather_history(location_id):
     """Store weather history data for a location."""
+    app.logger.info(f"Storing historical data for location ID: {location_id}")
     if not request.is_json:
+        app.logger.info("Failed to store historical data: Content type must be JSON")
         return jsonify({"error": "Content-Type must be application/json"}), 400
     
     data = request.get_json()
     db = get_db()
     
+    app.logger.info("Storing historical data.")
     try:
         for hourly in data.get('hourly', []):
             db.execute('''
@@ -604,8 +637,10 @@ def store_weather_history(location_id):
                 hourly.get('weather', [{}])[0].get('icon')
             ))
         db.commit()
+        app.logger.info("Historical data stored successfully.")
         return jsonify({"message": "Historical data stored successfully"}), 201
     except sqlite3.Error as e:
+        app.logger.info(f"Error storing historical data: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
