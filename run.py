@@ -16,7 +16,20 @@ API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
 
 def get_weather_api_data(location_id):
-    """Fetch current weather data from OpenWeatherMap."""
+    """
+    Fetch current weather data from OpenWeatherMap.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        dict: Weather data containing temperature, feels_like, pressure, etc.
+            or None if the request fails
+    
+    Side-effects:
+        - Makes HTTP requests to local API and OpenWeatherMap
+        - Prints error messages to console on failure
+    """
 
     #Getting location's coordinates via running queries using location_id
     response = session.get(f"{BASE_URL}/favorites")
@@ -59,7 +72,21 @@ def get_weather_api_data(location_id):
         return None
 
 def get_forecast_api_data(location_id):
-    """Fetch weather forecast data from OpenWeatherMap."""
+    """
+    Fetch weather forecast data from OpenWeatherMap.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        list: List of forecast data dictionaries containing temperature, 
+             feels_like, pressure, etc. for each time period
+             or None if the request fails
+    
+    Side-effects:
+        - Makes HTTP requests to local API and OpenWeatherMap
+        - Prints error messages to console on failure
+    """
 
     #Getting location's coordinates via running queries using location_id
     response = session.get(f"{BASE_URL}/favorites")
@@ -105,7 +132,22 @@ def get_forecast_api_data(location_id):
         return None
 
 def get_history_api_data(location_id):
-    """Fetch historical weather data from OpenWeatherMap."""
+    """
+    Fetch historical weather data from OpenWeatherMap.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        list: List of historical weather data dictionaries containing temperature,
+             feels_like, pressure, etc. for each hour
+             or None if the request fails
+    
+    Side-effects:
+        - Makes HTTP requests to local API and OpenWeatherMap
+        - Prints error messages to console on failure
+    """
+
     #Getting location's coordinates via running queries using location_id
     response = session.get(f"{BASE_URL}/favorites")
     if response.status_code == 200:
@@ -152,16 +194,57 @@ def get_history_api_data(location_id):
         return None
     
 def register_user(username, password):
+    """
+    Register a new user with the application.
+    
+    Args:
+        username (str): Desired username for new account
+        password (str): Password for new account
+    
+    Returns:
+        bool: True if registration successful, False otherwise
+    
+    Side-effects:
+        - Makes HTTP POST request to register endpoint
+    """
     response = requests.post(f"{BASE_URL}/register", 
         json={"username": username, "password": password})
     return response.status_code == 201
 
 def login_user(username, password):
+    """
+    Log in an existing user.
+    
+    Args:
+        username (str): User's username
+        password (str): User's password
+    
+    Returns:
+        bool: True if login successful, False otherwise
+    
+    Side-effects:
+        - Makes HTTP POST request to login endpoint
+        - Establishes session if successful
+    """
     response = session.post(f"{BASE_URL}/login", 
         json={"username": username, "password": password})
     return response.status_code == 200
 
 def get_favorites(show_weather=False):
+    """
+    Retrieve user's favorite locations.
+    
+    Args:
+        show_weather (bool): Whether to display current weather for each location
+    
+    Returns:
+        bool: True if favorites retrieved successfully, False otherwise
+    
+    Side-effects:
+        - Makes HTTP GET request to favorites endpoint
+        - Prints location information to console
+        - Prints weather information if show_weather is True
+    """
     response = session.get(f"{BASE_URL}/favorites")
     if response.status_code == 200:
         locations = response.json()
@@ -184,6 +267,21 @@ def get_favorites(show_weather=False):
     return False
 
 def add_favorite(location_name, latitude, longitude):
+    """
+    Add a new favorite location for the current user.
+    
+    Args:
+        location_name (str): Name of the location
+        latitude (float): Latitude coordinate
+        longitude (float): Longitude coordinate
+    
+    Returns:
+        bool: True if location added successfully, False otherwise
+    
+    Side-effects:
+        - Makes HTTP POST request to favorites endpoint
+        - Prints error message if not logged in
+    """
     try:
         response = session.post(f"{BASE_URL}/favorites", 
             json={
@@ -199,6 +297,19 @@ def add_favorite(location_name, latitude, longitude):
         return False
 
 def remove_favorite(location_id):
+    """
+    Remove a favorite location for the current user.
+    
+    Args:
+        location_id (int): ID of the favorite location to remove
+    
+    Returns:
+        bool: True if location removed successfully, False otherwise
+    
+    Side-effects:
+        - Makes HTTP DELETE request to favorites endpoint
+        - Prints error message if not logged in
+    """
     try:
         response = session.delete(f"{BASE_URL}/favorites/{location_id}")
         if response.status_code == 401:
@@ -209,7 +320,21 @@ def remove_favorite(location_id):
         return False
 
 def get_current_weather(location_id):
-    """Get current weather for a favorite location."""
+    """
+    Get current weather for a favorite location.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        bool: True if weather data retrieved and displayed successfully,
+              False otherwise
+    
+    Side-effects:
+        - Makes HTTP GET request to weather endpoint
+        - Makes API call to OpenWeatherMap if local data not available
+        - Prints weather information to console
+    """
     try:
         response = session.get(f"{BASE_URL}/weather/current/{location_id}")
         if response.status_code == 200:
@@ -235,7 +360,21 @@ def get_current_weather(location_id):
         return False
 
 def get_weather_forecast(location_id):
-    """Get weather forecast for a favorite location."""
+    """
+    Get weather forecast for a favorite location.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        bool: True if forecast data retrieved and displayed successfully,
+              False otherwise
+    
+    Side-effects:
+        - Makes HTTP GET request to forecast endpoint
+        - Makes API call to OpenWeatherMap if local data not available
+        - Prints forecast information to console
+    """
     try:
         response = session.get(f"{BASE_URL}/weather/forecast/{location_id}")
         if response.status_code == 200:
@@ -261,7 +400,21 @@ def get_weather_forecast(location_id):
         return False
 
 def get_weather_history(location_id):
-    """Get weather history for a favorite location."""
+    """
+    Get weather history for a favorite location.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        bool: True if historical data retrieved and displayed successfully,
+              False otherwise
+    
+    Side-effects:
+        - Makes HTTP GET request to history endpoint
+        - Makes API call to OpenWeatherMap if local data not available
+        - Prints historical weather information to console
+    """
     try:
         response = session.get(f"{BASE_URL}/weather/history/{location_id}")
         if response.status_code == 200:

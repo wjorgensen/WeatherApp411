@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from run import (register_user, login_user, get_favorites, 
-                add_favorite, remove_favorite, BASE_URL)
+                add_favorite, remove_favorite, get_weather_api_data,
+                get_forecast_api_data, get_history_api_data, BASE_URL)
 
 
 
@@ -142,6 +143,147 @@ class RunTestCase(unittest.TestCase):
         result = remove_favorite(999)  # Non-existent ID
         
         self.assertFalse(result)
+
+    @patch('requests.sessions.Session.get')
+    @patch('requests.get')
+    def test_get_weather_api_data_success(self, mock_weather_get, mock_favorites_get):
+        """Test successful weather data retrieval."""
+        # Mock favorites response
+        mock_favorites_response = MagicMock()
+        mock_favorites_response.status_code = 200
+        mock_favorites_response.json.return_value = [{
+            'id': 1,
+            'location_name': 'Test Location',
+            'latitude': 123.456,
+            'longitude': 78.90
+        }]
+        mock_favorites_get.return_value = mock_favorites_response
+
+        # Mock weather API response
+        mock_weather_response = MagicMock()
+        mock_weather_response.status_code = 200
+        mock_weather_response.json.return_value = {
+            'main': {
+                'temp': 20.5,
+                'feels_like': 21.0,
+                'pressure': 1013,
+                'humidity': 65
+            },
+            'wind': {
+                'speed': 5.2,
+                'deg': 180
+            },
+            'weather': [{
+                'description': 'clear sky',
+                'icon': '01d'
+            }]
+        }
+        mock_weather_get.return_value = mock_weather_response
+
+        result = get_weather_api_data(1)
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result['temperature'], 20.5)
+        self.assertEqual(result['description'], 'clear sky')
+
+    @patch('requests.sessions.Session.get')
+    def test_get_weather_api_data_location_not_found(self, mock_get):
+        """Test weather data retrieval with invalid location."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+        mock_get.return_value = mock_response
+
+        result = get_weather_api_data(999)
+        
+        self.assertIsNone(result)
+
+    @patch('requests.sessions.Session.get')
+    @patch('requests.get')
+    def test_get_forecast_api_data_success(self, mock_weather_get, mock_favorites_get):
+        """Test successful forecast data retrieval."""
+        # Mock favorites response
+        mock_favorites_response = MagicMock()
+        mock_favorites_response.status_code = 200
+        mock_favorites_response.json.return_value = [{
+            'id': 1,
+            'location_name': 'Test Location',
+            'latitude': 123.456,
+            'longitude': 78.90
+        }]
+        mock_favorites_get.return_value = mock_favorites_response
+
+        # Mock weather API response
+        mock_weather_response = MagicMock()
+        mock_weather_response.status_code = 200
+        mock_weather_response.json.return_value = {
+            'list': [{
+                'dt': 1234567890,
+                'main': {
+                    'temp': 22.5,
+                    'feels_like': 23.0,
+                    'pressure': 1015,
+                    'humidity': 70
+                },
+                'wind': {
+                    'speed': 4.1,
+                    'deg': 90
+                },
+                'weather': [{
+                    'description': 'scattered clouds',
+                    'icon': '03d'
+                }]
+            }]
+        }
+        mock_weather_get.return_value = mock_weather_response
+
+        result = get_forecast_api_data(1)
+        
+        self.assertIsNotNone(result)
+        self.assertTrue(isinstance(result, list))
+        self.assertEqual(result[0]['temperature'], 22.5)
+        self.assertEqual(result[0]['description'], 'scattered clouds')
+
+    @patch('requests.sessions.Session.get')
+    @patch('requests.get')
+    def test_get_history_api_data_success(self, mock_weather_get, mock_favorites_get):
+        """Test successful historical data retrieval."""
+        # Mock favorites response
+        mock_favorites_response = MagicMock()
+        mock_favorites_response.status_code = 200
+        mock_favorites_response.json.return_value = [{
+            'id': 1,
+            'location_name': 'Test Location',
+            'latitude': 123.456,
+            'longitude': 78.90
+        }]
+        mock_favorites_get.return_value = mock_favorites_response
+
+        # Mock weather API response
+        mock_weather_response = MagicMock()
+        mock_weather_response.status_code = 200
+        mock_weather_response.json.return_value = {
+            'hourly': [{
+                'dt': 1234567890,
+                'temp': 18.5,
+                'feels_like': 19.0,
+                'pressure': 1012,
+                'humidity': 75,
+                'wind_speed': 3.1,
+                'wind_deg': 270,
+                'weather': [{
+                    'description': 'light rain',
+                    'icon': '10n'
+                }]
+            }]
+        }
+        mock_weather_get.return_value = mock_weather_response
+
+        result = get_history_api_data(1)
+        
+        self.assertIsNotNone(result)
+        self.assertTrue(isinstance(result, list))
+        self.assertEqual(result[0]['temperature'], 18.5)
 
 if __name__ == '__main__':
     unittest.main()
