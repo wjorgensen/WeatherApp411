@@ -100,7 +100,7 @@ def get_forecast_api_data(location_id):
         if response.status_code == 200:
             data = response.json()
             return {
-                "current": {"dt": int(time.time())},
+                "current": {"dt": data.get('current', {}).get('dt', int(time.time()))},
                 "daily": data.get('daily', [])
             }
         else:
@@ -114,7 +114,6 @@ def get_forecast_api_data(location_id):
 def get_history_api_data(location_id):
     """
     Fetch historical weather data from OpenWeatherMap.
-    Makes multiple API calls to get data for the last 24 hours.
     """
     try:
         response = session.get(f"{BASE_URL}/favorites")
@@ -128,39 +127,27 @@ def get_history_api_data(location_id):
             print(f"\nFailed to fetch favorites: {response.status_code}")
             return None
 
-        current_time = int(time.time())
-        historical_data = []
+        url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
+        params = {
+            "lat": location["latitude"],
+            "lon": location["longitude"],
+            "dt": int(time.time()) - 3600,  # 1 hour ago
+            "appid": API_KEY,
+            "units": "metric"
+        }
 
-        # Make API calls for the last 24 hours in 1-hour intervals
-        for hour in range(1, 25):  # 1 to 24 hours ago
-            timestamp = current_time - (hour * 3600)  # 3600 seconds = 1 hour
-            
-            url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
-            params = {
-                "lat": location["latitude"],
-                "lon": location["longitude"],
-                "dt": timestamp,
-                "appid": API_KEY,
-                "units": "metric"
-            }
-
-            response = requests.get(url, params=params)
-            if response.status_code == 200:
-                data = response.json()
-                if 'data' in data and len(data['data']) > 0:
-                    historical_data.append(data['data'][0])
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data:
+                return {
+                    "hourly": data['data']
+                }
             else:
-                print(f"\nFailed to fetch historical data for timestamp {timestamp}: {response.status_code}")
-
-            # Add a small delay between API calls to avoid rate limiting
-            time.sleep(0.1)
-
-        if historical_data:
-            return {
-                "hourly": historical_data
-            }
+                print("\nNo historical data retrieved.")
+                return None
         else:
-            print("\nNo historical data retrieved.")
+            print(f"\nFailed to fetch historical data: {response.status_code}")
             return None
 
     except Exception as e:

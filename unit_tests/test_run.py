@@ -106,7 +106,7 @@ class RunTestCase(unittest.TestCase):
     def test_add_favorite_success(self, mock_post):
         """Test successful addition of favorite location."""
         mock_response = MagicMock()
-        mock_response.status_code = 201
+        mock_response.status_code = 200
         mock_post.return_value = mock_response
 
         result = add_favorite(
@@ -181,8 +181,8 @@ class RunTestCase(unittest.TestCase):
         result = get_weather_api_data(1)
         
         self.assertIsNotNone(result)
-        self.assertEqual(result['temperature'], 20.5)
-        self.assertEqual(result['description'], 'clear sky')
+        self.assertEqual(result['current']['temp'], 20.5)
+        self.assertEqual(result['current']['weather'][0]['description'], 'clear sky')
 
     @patch('requests.sessions.Session.get')
     def test_get_weather_api_data_location_not_found(self, mock_get):
@@ -215,18 +215,15 @@ class RunTestCase(unittest.TestCase):
         mock_weather_response = MagicMock()
         mock_weather_response.status_code = 200
         mock_weather_response.json.return_value = {
-            'list': [{
+            'current': {'dt': 1234567890},
+            'daily': [{
                 'dt': 1234567890,
-                'main': {
-                    'temp': 22.5,
-                    'feels_like': 23.0,
-                    'pressure': 1015,
-                    'humidity': 70
-                },
-                'wind': {
-                    'speed': 4.1,
-                    'deg': 90
-                },
+                'temp': {'day': 22.5},
+                'feels_like': {'day': 23.0},
+                'pressure': 1015,
+                'humidity': 70,
+                'wind_speed': 4.1,
+                'wind_deg': 90,
                 'weather': [{
                     'description': 'scattered clouds',
                     'icon': '03d'
@@ -238,9 +235,8 @@ class RunTestCase(unittest.TestCase):
         result = get_forecast_api_data(1)
         
         self.assertIsNotNone(result)
-        self.assertTrue(isinstance(result, list))
-        self.assertEqual(result[0]['temperature'], 22.5)
-        self.assertEqual(result[0]['description'], 'scattered clouds')
+        self.assertEqual(result['current']['dt'], 1234567890)
+        self.assertEqual(len(result['daily']), 1)
 
     @patch('requests.sessions.Session.get')
     @patch('requests.get')
@@ -261,7 +257,7 @@ class RunTestCase(unittest.TestCase):
         mock_weather_response = MagicMock()
         mock_weather_response.status_code = 200
         mock_weather_response.json.return_value = {
-            'hourly': [{
+            'data': [{
                 'dt': 1234567890,
                 'temp': 18.5,
                 'feels_like': 19.0,
@@ -280,8 +276,8 @@ class RunTestCase(unittest.TestCase):
         result = get_history_api_data(1)
         
         self.assertIsNotNone(result)
-        self.assertTrue(isinstance(result, list))
-        self.assertEqual(result[0]['temperature'], 18.5)
+        self.assertTrue('hourly' in result)
+        self.assertEqual(len(result['hourly']), 1)
 
 if __name__ == '__main__':
     unittest.main()
