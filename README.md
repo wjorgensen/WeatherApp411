@@ -24,7 +24,7 @@
 2. Navigate to folder
 3. ```python3 -m venv venv```
 4. ```source venv/bin/activate```
-5. ```pip install -r ./requirements.txt```
+5. ```pip install ./requirements.txt```
 6. ```python3 app.py```
 7. Open another terminal window.
 8. ```chmod +x smoketest.sh```
