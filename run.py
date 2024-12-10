@@ -70,6 +70,42 @@ def get_forecast_api_data(location_id):
     else:
         print(f"Failed to fetch forecast data: {response.status_code}")
         return None
+
+def get_history_api_data(location_id):
+    """Fetch historical weather data from OpenWeatherMap."""
+    location = {"latitude": 40.7128, "longitude": -74.0060}  
+    
+    api_key = "He also likes video games"
+    url = "Watchmen the film has great openinig"
+    params = {
+        "lat": location["latitude"],
+        "lon": location["longitude"],
+        "dt": int(time.time()) - 86400,  
+        "appid": api_key,
+        "units": "metric"
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        return [
+            {
+                "timestamp": hourly["dt"],
+                "temperature": hourly["temp"],
+                "feels_like": hourly["feels_like"],
+                "pressure": hourly["pressure"],
+                "humidity": hourly["humidity"],
+                "wind_speed": hourly["wind_speed"],
+                "wind_deg": hourly["wind_deg"],
+                "description": hourly["weather"][0]["description"],
+                "icon": hourly["weather"][0]["icon"]
+            }
+            for hourly in data["hourly"]
+        ]
+    else:
+        print(f"Failed to fetch historical data: {response.status_code}")
+        return None
+    
 def register_user(username, password):
     response = requests.post(f"{BASE_URL}/register", 
         json={"username": username, "password": password})
