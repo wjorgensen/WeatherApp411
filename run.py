@@ -2,19 +2,17 @@ import time
 import requests
 from requests.sessions import Session
 from getpass import getpass
-# from dotenv import load_dotenv
-# import os
+from dotenv import load_dotenv
+import os
 
 BASE_URL = "http://127.0.0.1:5000"
 session = Session()
 
 
-# load_dotenv()
+load_dotenv()
 
-# API_KEY = os.getenv("OPENWEATHER_API_KEY")
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
-# if not API_KEY:
-#     raise ValueError("No API key found. Please add OPENWEATHER_API_KEY to your .env file.")
 
 
 def get_weather_api_data(location_id):
