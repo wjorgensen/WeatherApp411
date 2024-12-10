@@ -17,7 +17,6 @@
 4. ```source venv/bin/activate```
 5. ```pip install -r ./requirements.txt```
 6. ```python -m pytest unit_tests/test_run.py -v```
-7. Note: weather_api functions (external api calls) are also tested in test_run.py. test_openweather_api.py does not contain unit tests, only contains a simple test to check that openweatherAPI can be connected to.
 
 ## To run smoketest
 1. Clone the repository locally
@@ -29,7 +28,7 @@
 7. Open another terminal window.
 8. ```chmod +x smoketest.sh```
 9. ```./smoketest.sh```
-10. [Link to Smoketest Demo Video](https://youtu.be/ESyqdBE_7T0)
+
 ## API Routes
 
 ### Authentication

@@ -6,12 +6,153 @@ from requests.sessions import Session
 from getpass import getpass
 from dotenv import load_dotenv
 import os
-import weather_api
 
 BASE_URL = "http://127.0.0.1:5000"
 session = Session()
 
+
 load_dotenv()
+
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
+
+def get_weather_api_data(location_id):
+    """
+    Fetch current weather data from OpenWeatherMap.
+    """
+    try:
+        # Get the location coordinates
+        response = session.get(f"{BASE_URL}/favorites")
+        if response.status_code == 200:
+            favorites = response.json()
+            location = next((loc for loc in favorites if loc["id"] == location_id), None)
+            if not location:
+                print(f"\nLocation with ID {location_id} not found.")
+                return None
+        else:
+            print(f"\nFailed to fetch favorites: {response.status_code}")
+            return None
+        
+        # Calling OpenWeatherMap API 3.0
+        url = "https://api.openweathermap.org/data/3.0/onecall"
+        params = {
+            "lat": location["latitude"],
+            "lon": location["longitude"],
+            "exclude": "minutely,hourly,daily,alerts",
+            "appid": API_KEY,
+            "units": "metric"
+        }
+        
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            current_time = int(time.time())
+            return {
+                "current": {
+                    "dt": current_time,
+                    "temp": data['current']['temp'],
+                    "feels_like": data['current']['feels_like'],
+                    "pressure": data['current']['pressure'],
+                    "humidity": data['current']['humidity'],
+                    "wind_speed": data['current']['wind_speed'],
+                    "wind_deg": data['current']['wind_deg'],
+                    "weather": [
+                        {
+                            "description": data['current']['weather'][0]['description'],
+                            "icon": data['current']['weather'][0]['icon']
+                        }
+                    ]
+                }
+            }
+        else:
+            print(f"\nAPI Error: {response.status_code}")
+            return None
+
+    except Exception as e:
+        print(f"\nError getting weather: {str(e)}")
+        return None
+
+def get_forecast_api_data(location_id):
+    """
+    Fetch weather forecast data from OpenWeatherMap.
+    """
+    try:
+        response = session.get(f"{BASE_URL}/favorites")
+        if response.status_code == 200:
+            favorites = response.json()
+            location = next((loc for loc in favorites if loc["id"] == location_id), None)
+            if not location:
+                print(f"\nLocation with ID {location_id} not found.")
+                return None
+        else:
+            print(f"\nFailed to fetch favorites: {response.status_code}")
+            return None
+
+        url = "https://api.openweathermap.org/data/3.0/onecall"
+        params = {
+            "lat": location["latitude"],
+            "lon": location["longitude"],
+            "exclude": "current,minutely,alerts",
+            "appid": API_KEY,
+            "units": "metric"
+        }
+
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "current": {"dt": data.get('current', {}).get('dt', int(time.time()))},
+                "daily": data.get('daily', [])
+            }
+        else:
+            print(f"\nFailed to fetch forecast data: {response.status_code}")
+            return None
+
+    except Exception as e:
+        print(f"\nError getting forecast: {str(e)}")
+        return None
+
+def get_history_api_data(location_id):
+    """
+    Fetch historical weather data from OpenWeatherMap.
+    """
+    try:
+        response = session.get(f"{BASE_URL}/favorites")
+        if response.status_code == 200:
+            favorites = response.json()
+            location = next((loc for loc in favorites if loc["id"] == location_id), None)
+            if not location:
+                print(f"\nLocation with ID {location_id} not found.")
+                return None
+        else:
+            print(f"\nFailed to fetch favorites: {response.status_code}")
+            return None
+
+        url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
+        params = {
+            "lat": location["latitude"],
+            "lon": location["longitude"],
+            "dt": int(time.time()) - 3600,  # 1 hour ago
+            "appid": API_KEY,
+            "units": "metric"
+        }
+
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if 'data' in data:
+                return {
+                    "hourly": data['data']
+                }
+            else:
+                print("\nNo historical data retrieved.")
+                return None
+        else:
+            print(f"\nFailed to fetch historical data: {response.status_code}")
+            return None
+
+    except Exception as e:
+        print(f"\nError getting history: {str(e)}")
+        return None
 
 def register_user(username, password):
     response = session.post(f"{BASE_URL}/register", 
@@ -97,7 +238,7 @@ def get_current_weather(location_id):
                 return True
             else:
                 # Get fresh weather data from API
-                weather_data = weather_api.get_weather_api_data(location_id)
+                weather_data = get_weather_api_data(location_id)
                 if weather_data:
                     # Store the new weather data
                     store_response = session.post(
@@ -143,7 +284,7 @@ def get_weather_forecast(location_id):
                 return True
             else:
                 # Get fresh forecast data from API
-                forecast_data = weather_api.get_forecast_api_data(location_id)  
+                forecast_data = get_forecast_api_data(location_id)  
                 if forecast_data:
                     # Store the new forecast data
                     store_response = session.post(f"{BASE_URL}/weather/forecast/{location_id}", 
@@ -187,7 +328,7 @@ def get_weather_history(location_id):
                 return True
             else:
                 # Get fresh history data from API
-                history_data = weather_api.get_history_api_data(location_id)
+                history_data = get_history_api_data(location_id)
                 if history_data and 'hourly' in history_data:
                     # Store the new history data
                     store_response = session.post(f"{BASE_URL}/weather/history/{location_id}", 
