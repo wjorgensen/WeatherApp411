@@ -1,6 +1,10 @@
 import requests
+from dotenv import load_dotenv
+import os
 
-API_KEY = "9030e9dd7faf9eca668c408af9d41125"  
+load_dotenv()
+
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
 LAT = 42.3601  
 LON = -71.0589   #Latitude, Longtitude for Boston hehe
 

@@ -3,6 +3,8 @@ from unittest.mock import patch, MagicMock
 from run import (register_user, login_user, get_favorites, 
                 add_favorite, remove_favorite, BASE_URL)
 
+
+
 class RunTestCase(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures before each test method."""

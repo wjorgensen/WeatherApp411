@@ -25,7 +25,7 @@ def get_weather_api_data(location_id):
         "lat": location["latitude"],
         "lon": location["longitude"],
         "exclude": "minutely,hourly,daily,alerts",
-        "appid": "9030e9dd7faf9eca668c408af9d41125",
+        "appid": API_KEY,
         "units": "metric"
     }
 
@@ -55,7 +55,7 @@ def get_forecast_api_data(location_id):
         "lat": location["latitude"],
         "lon": location["longitude"],
         "exclude": "current,minutely,hourly,alerts",
-        "appid": "9030e9dd7faf9eca668c408af9d41125",
+        "appid": API_KEY,
         "units": "metric"
     }
 
@@ -89,7 +89,7 @@ def get_history_api_data(location_id):
         "lat": location["latitude"],
         "lon": location["longitude"],
         "dt": int(time.time()) - 86400,
-        "appid": "9030e9dd7faf9eca668c408af9d41125",
+        "appid": API_KEY,
         "units": "metric"
     }
 
