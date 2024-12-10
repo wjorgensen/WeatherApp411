@@ -13,7 +13,20 @@ BASE_URL = "http://127.0.0.1:5000"
 session = Session()
 
 def get_weather_api_data(location_id):
-    """Fetch current weather data from OpenWeatherMap."""
+    """
+    Fetch current weather data from OpenWeatherMap.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        dict: Weather data containing temperature, feels_like, pressure, etc.
+            or None if the request fails
+    
+    Side-effects:
+        - Makes HTTP requests to local API and OpenWeatherMap
+        - Prints error messages to console on failure
+    """
 
     #Getting location's coordinates via running queries using location_id
     response = session.get(f"{BASE_URL}/favorites")
@@ -51,14 +64,26 @@ def get_weather_api_data(location_id):
             "description": data["weather"][0]["description"],
             "icon": data["weather"][0]["icon"]
         }
-    
-    
     else:
         print(f"Failed to fetch current weather: {response.status_code}")
         return None
 
 def get_forecast_api_data(location_id):
-    """Fetch weather forecast data from OpenWeatherMap."""
+    """
+    Fetch weather forecast data from OpenWeatherMap.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        list: List of forecast data dictionaries containing temperature, 
+             feels_like, pressure, etc. for each time period
+             or None if the request fails
+    
+    Side-effects:
+        - Makes HTTP requests to local API and OpenWeatherMap
+        - Prints error messages to console on failure
+    """
 
     #Getting location's coordinates via running queries using location_id
     response = session.get(f"{BASE_URL}/favorites")
@@ -104,7 +129,22 @@ def get_forecast_api_data(location_id):
         return None
 
 def get_history_api_data(location_id):
-    """Fetch historical weather data from OpenWeatherMap."""
+    """
+    Fetch historical weather data from OpenWeatherMap.
+    
+    Args:
+        location_id (int): ID of the favorite location
+    
+    Returns:
+        list: List of historical weather data dictionaries containing temperature,
+             feels_like, pressure, etc. for each hour
+             or None if the request fails
+    
+    Side-effects:
+        - Makes HTTP requests to local API and OpenWeatherMap
+        - Prints error messages to console on failure
+    """
+
     #Getting location's coordinates via running queries using location_id
     response = session.get(f"{BASE_URL}/favorites")
     if response.status_code == 200:
@@ -149,4 +189,3 @@ def get_history_api_data(location_id):
     else:
         print(f"Failed to fetch historical data: {response.status_code}")
         return None
-    
