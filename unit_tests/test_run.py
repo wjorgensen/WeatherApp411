@@ -19,11 +19,11 @@ class RunTestCase(unittest.TestCase):
             'longitude': 78.90
         }
 
-    @patch('requests.post')
+    @patch('requests.sessions.Session.post')
     def test_register_user_success(self, mock_post):
         """Test successful user registration."""
         mock_response = MagicMock()
-        mock_response.status_code = 201
+        mock_response.status_code = 200
         mock_post.return_value = mock_response
 
         result = register_user(self.test_user['username'], self.test_user['password'])
@@ -34,7 +34,7 @@ class RunTestCase(unittest.TestCase):
             json=self.test_user
         )
 
-    @patch('requests.post')
+    @patch('requests.sessions.Session.post')
     def test_register_user_failure(self, mock_post):
         """Test failed user registration."""
         mock_response = MagicMock()
@@ -163,20 +163,18 @@ class RunTestCase(unittest.TestCase):
         mock_weather_response = MagicMock()
         mock_weather_response.status_code = 200
         mock_weather_response.json.return_value = {
-            'main': {
+            'current': {
                 'temp': 20.5,
                 'feels_like': 21.0,
                 'pressure': 1013,
-                'humidity': 65
-            },
-            'wind': {
-                'speed': 5.2,
-                'deg': 180
-            },
-            'weather': [{
-                'description': 'clear sky',
-                'icon': '01d'
-            }]
+                'humidity': 65,
+                'wind_speed': 5.2,
+                'wind_deg': 180,
+                'weather': [{
+                    'description': 'clear sky',
+                    'icon': '01d'
+                }]
+            }
         }
         mock_weather_get.return_value = mock_weather_response
 
