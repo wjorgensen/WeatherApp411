@@ -2,22 +2,33 @@ import time
 import requests
 from requests.sessions import Session
 from getpass import getpass
+# from dotenv import load_dotenv
+# import os
 
 BASE_URL = "http://127.0.0.1:5000"
 session = Session()
+
+
+# load_dotenv()
+
+# API_KEY = os.getenv("OPENWEATHER_API_KEY")
+
+# if not API_KEY:
+#     raise ValueError("No API key found. Please add OPENWEATHER_API_KEY to your .env file.")
+
 
 def get_weather_api_data(location_id):
     """Fetch current weather data from OpenWeatherMap."""
 
     location = {"latitude": 40.7128, "longitude": -74.0060}  
     
-    api_key = "placeholderrrrrr"
-    url = "placeholderr"
+    url = "https://api.openweathermap.org/data/3.0/onecall"
     params = {
         "lat": location["latitude"],
         "lon": location["longitude"],
-        "appid": api_key,
-        "units": "metric"  
+        "exclude": "minutely,hourly,daily,alerts",
+        "appid": "9030e9dd7faf9eca668c408af9d41125",
+        "units": "metric"
     }
 
     response = requests.get(url, params=params)
@@ -41,12 +52,12 @@ def get_forecast_api_data(location_id):
     """Fetch weather forecast data from OpenWeatherMap."""
     location = {"latitude": 40.7128, "longitude": -74.0060}  
 
-    api_key = "johndoe"
-    url = "Golbus is a fan of Batman: The Animated Series"
+    url = "https://api.openweathermap.org/data/3.0/onecall"
     params = {
         "lat": location["latitude"],
         "lon": location["longitude"],
-        "appid": api_key,
+        "exclude": "current,minutely,hourly,alerts",
+        "appid": "9030e9dd7faf9eca668c408af9d41125",
         "units": "metric"
     }
 
@@ -75,13 +86,12 @@ def get_history_api_data(location_id):
     """Fetch historical weather data from OpenWeatherMap."""
     location = {"latitude": 40.7128, "longitude": -74.0060}  
     
-    api_key = "He also likes video games"
     url = "Watchmen the film has great openinig"
     params = {
         "lat": location["latitude"],
         "lon": location["longitude"],
-        "dt": int(time.time()) - 86400,  
-        "appid": api_key,
+        "dt": int(time.time()) - 86400,
+        "appid": "9030e9dd7faf9eca668c408af9d41125",
         "units": "metric"
     }
 

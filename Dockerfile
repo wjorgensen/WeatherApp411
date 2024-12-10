@@ -11,6 +11,10 @@ COPY schema.sql .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install python-dotenv
+
+
+
 EXPOSE 5000
 
 CMD ["sh", "-c", "flask init-db && python app.py & python run.py"]
