@@ -8,6 +8,7 @@
 
 4. ```docker build -t weather-app .```
 5. ```docker run -it weather-app```
+6. Note: For this command line app, Create Account automatically runs Login as well. On first use, select Create Account. Login functionality is properly displayed in smoketest, but basically redundant in the command line app. Update Password functionality also present in smoketest.
 
 ## To run unit tests
 1. Clone the repository locally
