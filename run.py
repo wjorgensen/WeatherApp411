@@ -18,7 +18,19 @@ API_KEY = os.getenv("OPENWEATHER_API_KEY")
 def get_weather_api_data(location_id):
     """Fetch current weather data from OpenWeatherMap."""
 
-    location = {"latitude": 40.7128, "longitude": -74.0060}  
+    #Getting location's coordinates via running queries using location_id
+    response = session.get(f"{BASE_URL}/favorites")
+    if response.status_code == 200:
+        favorites = response.json()
+        location = next((loc for loc in favorites if loc["id"] == location_id), None)
+        if not location:
+            print(f"Location with ID {location_id} not found.")
+            return None
+    else:
+        print(f"Failed to fetch favorites: {response.status_code}")
+        return None
+    
+    # Calling OpenWeatherMap API
     
     url = "https://api.openweathermap.org/data/3.0/onecall"
     params = {
@@ -48,8 +60,20 @@ def get_weather_api_data(location_id):
 
 def get_forecast_api_data(location_id):
     """Fetch weather forecast data from OpenWeatherMap."""
-    location = {"latitude": 40.7128, "longitude": -74.0060}  
 
+    #Getting location's coordinates via running queries using location_id
+    response = session.get(f"{BASE_URL}/favorites")
+    if response.status_code == 200:
+        favorites = response.json()
+        location = next((loc for loc in favorites if loc["id"] == location_id), None)
+        if not location:
+            print(f"Location with ID {location_id} not found.")
+            return None
+    else:
+        print(f"Failed to fetch favorites: {response.status_code}")
+        return None
+
+    # Calling OpenWeatherMap API
     url = "https://api.openweathermap.org/data/3.0/onecall"
     params = {
         "lat": location["latitude"],
@@ -82,7 +106,20 @@ def get_forecast_api_data(location_id):
 
 def get_history_api_data(location_id):
     """Fetch historical weather data from OpenWeatherMap."""
-    location = {"latitude": 40.7128, "longitude": -74.0060}  
+    #Getting location's coordinates via running queries using location_id
+    response = session.get(f"{BASE_URL}/favorites")
+    if response.status_code == 200:
+        favorites = response.json()
+        location = next((loc for loc in favorites if loc["id"] == location_id), None)
+        if not location:
+            print(f"Location with ID {location_id} not found.")
+            return None
+    else:
+        print(f"Failed to fetch favorites: {response.status_code}")
+        return None
+
+
+     # Calling OpenWeatherMap API
     
     url = "Watchmen the film has great openinig"
     params = {
