@@ -178,7 +178,7 @@ def get_current_weather(location_id):
                 print(f"Wind Speed: {weather['wind_speed']} m/s")
                 return True
             else:
-                weather_data = get_weather_api_data(location_id)  # TODO: Implement this function to call API and return JSON
+                weather_data = get_weather_api_data(location_id) 
                 if weather_data:
                     response = session.post(f"{BASE_URL}/weather/current/{location_id}", 
                                           json=weather_data)
@@ -204,7 +204,7 @@ def get_weather_forecast(location_id):
                     print("-------------------")
                 return True
             else:
-                forecast_data = get_forecast_api_data(location_id)  # TODO: Implement this function to call API and return JSON
+                forecast_data = get_forecast_api_data(location_id)  
                 if forecast_data:
                     response = session.post(f"{BASE_URL}/weather/forecast/{location_id}", 
                                           json=forecast_data)
@@ -230,7 +230,7 @@ def get_weather_history(location_id):
                     print("-------------------")
                 return True
             else:
-                history_data = get_history_api_data(location_id) # TODO: Implement this function to call API and return JSON
+                history_data = get_history_api_data(location_id)
                 if history_data:
                     response = session.post(f"{BASE_URL}/weather/history/{location_id}", 
                                           json=history_data)
@@ -240,8 +240,6 @@ def get_weather_history(location_id):
     except Exception as e:
         print(f"\nError getting history: {str(e)}")
         return False
-    
-# TODO: Add API call functions for weather
 
 
 def main():
