@@ -6,6 +6,37 @@ from getpass import getpass
 BASE_URL = "http://127.0.0.1:5000"
 session = Session()
 
+def get_weather_api_data(location_id):
+    """Fetch current weather data from OpenWeatherMap."""
+
+    location = {"latitude": 40.7128, "longitude": -74.0060}  
+    
+    api_key = "placeholderrrrrr"
+    url = "placeholderr"
+    params = {
+        "lat": location["latitude"],
+        "lon": location["longitude"],
+        "appid": api_key,
+        "units": "metric"  
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        return {
+            "temperature": data["main"]["temp"],
+            "feels_like": data["main"]["feels_like"],
+            "pressure": data["main"]["pressure"],
+            "humidity": data["main"]["humidity"],
+            "wind_speed": data["wind"]["speed"],
+            "wind_deg": data["wind"]["deg"],
+            "description": data["weather"][0]["description"],
+            "icon": data["weather"][0]["icon"]
+        }
+    else:
+        print(f"Failed to fetch current weather: {response.status_code}")
+        return None
+
 def register_user(username, password):
     response = requests.post(f"{BASE_URL}/register", 
         json={"username": username, "password": password})
