@@ -15,8 +15,6 @@ load_dotenv()
 
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
-
-
 def get_weather_api_data(location_id):
     """
     Fetch current weather data from OpenWeatherMap.
@@ -28,10 +26,10 @@ def get_weather_api_data(location_id):
             favorites = response.json()
             location = next((loc for loc in favorites if loc["id"] == location_id), None)
             if not location:
-                print(f"Location with ID {location_id} not found.")
+                print(f"\nLocation with ID {location_id} not found.")
                 return None
         else:
-            print(f"Failed to fetch favorites: {response.status_code}")
+            print(f"\nFailed to fetch favorites: {response.status_code}")
             return None
         
         # Calling OpenWeatherMap API 3.0
@@ -83,10 +81,10 @@ def get_forecast_api_data(location_id):
             favorites = response.json()
             location = next((loc for loc in favorites if loc["id"] == location_id), None)
             if not location:
-                print(f"Location with ID {location_id} not found.")
+                print(f"\nLocation with ID {location_id} not found.")
                 return None
         else:
-            print(f"Failed to fetch favorites: {response.status_code}")
+            print(f"\nFailed to fetch favorites: {response.status_code}")
             return None
 
         url = "https://api.openweathermap.org/data/3.0/onecall"
@@ -106,7 +104,7 @@ def get_forecast_api_data(location_id):
                 "daily": data.get('daily', [])
             }
         else:
-            print(f"Failed to fetch forecast data: {response.status_code}")
+            print(f"\nFailed to fetch forecast data: {response.status_code}")
             return None
 
     except Exception as e:
@@ -116,6 +114,7 @@ def get_forecast_api_data(location_id):
 def get_history_api_data(location_id):
     """
     Fetch historical weather data from OpenWeatherMap.
+    Makes multiple API calls to get data for the last 24 hours.
     """
     try:
         response = session.get(f"{BASE_URL}/favorites")
@@ -123,29 +122,45 @@ def get_history_api_data(location_id):
             favorites = response.json()
             location = next((loc for loc in favorites if loc["id"] == location_id), None)
             if not location:
-                print(f"Location with ID {location_id} not found.")
+                print(f"\nLocation with ID {location_id} not found.")
                 return None
         else:
-            print(f"Failed to fetch favorites: {response.status_code}")
+            print(f"\nFailed to fetch favorites: {response.status_code}")
             return None
 
-        url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
-        params = {
-            "lat": location["latitude"],
-            "lon": location["longitude"],
-            "dt": int(time.time()) - 86400,  # 24 hours ago
-            "appid": API_KEY,
-            "units": "metric"
-        }
+        current_time = int(time.time())
+        historical_data = []
 
-        response = requests.get(url, params=params)
-        if response.status_code == 200:
-            data = response.json()
+        # Make API calls for the last 24 hours in 1-hour intervals
+        for hour in range(1, 25):  # 1 to 24 hours ago
+            timestamp = current_time - (hour * 3600)  # 3600 seconds = 1 hour
+            
+            url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
+            params = {
+                "lat": location["latitude"],
+                "lon": location["longitude"],
+                "dt": timestamp,
+                "appid": API_KEY,
+                "units": "metric"
+            }
+
+            response = requests.get(url, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                if 'data' in data and len(data['data']) > 0:
+                    historical_data.append(data['data'][0])
+            else:
+                print(f"\nFailed to fetch historical data for timestamp {timestamp}: {response.status_code}")
+
+            # Add a small delay between API calls to avoid rate limiting
+            time.sleep(0.1)
+
+        if historical_data:
             return {
-                "hourly": data.get('data', [])
+                "hourly": historical_data
             }
         else:
-            print(f"Failed to fetch historical data: {response.status_code}")
+            print("\nNo historical data retrieved.")
             return None
 
     except Exception as e:
@@ -153,53 +168,16 @@ def get_history_api_data(location_id):
         return None
 
 def register_user(username, password):
-    """
-    Register a new user with the application.
-    
-    Args:
-        username (str): Desired username for new account
-        password (str): Password for new account
-    
-    Returns:
-        bool: True if registration successful, False otherwise
-    
-    Side-effects:
-        - Makes HTTP POST request to register endpoint
-    """
     response = session.post(f"{BASE_URL}/register", 
         json={"username": username, "password": password})
     return response.status_code == 200
 
 def login_user(username, password):
-    """
-    Log in an existing user.
-    
-    Args:
-        username (str): User's username
-        password (str): User's password
-    
-    Returns:
-        bool: True if login successful, False otherwise
-    
-    Side-effects:
-        - Makes HTTP POST request to login endpoint
-        - Establishes session if successful
-    """
     response = session.post(f"{BASE_URL}/login", 
         json={"username": username, "password": password})
     return response.status_code == 200
 
 def get_favorites():
-    """
-    Retrieve user's favorite locations.
-    
-    Returns:
-        bool: True if favorites retrieved successfully, False otherwise
-    
-    Side-effects:
-        - Makes HTTP GET request to favorites endpoint
-        - Prints location information to console
-    """
     response = session.get(f"{BASE_URL}/favorites")
     if response.status_code == 200:
         try:
@@ -210,8 +188,8 @@ def get_favorites():
             
             print("\n=== Your Favorite Locations ===\n")
             for loc in locations:
-                if isinstance(loc, dict):  # Ensure we have a dictionary
-                    print(f"ID: {loc.get('id', 'N/A')}")
+                if isinstance(loc, dict):
+                    print(f"\nID: {loc.get('id', 'N/A')}")
                     print(f"Location: {loc.get('location_name', 'N/A')}")
                     print(f"Coordinates: ({loc.get('latitude', 'N/A')}, {loc.get('longitude', 'N/A')})")
                     print("-------------------\n")
@@ -225,23 +203,7 @@ def get_favorites():
     return False
 
 def add_favorite(location_name, latitude, longitude):
-    """
-    Add a new favorite location for the current user.
-    
-    Args:
-        location_name (str): Name of the location
-        latitude (float): Latitude coordinate
-        longitude (float): Longitude coordinate
-    
-    Returns:
-        bool: True if location added successfully, False otherwise
-    
-    Side-effects:
-        - Makes HTTP POST request to favorites endpoint
-        - Prints error message if not logged in
-    """
     try:
-        # Validate and convert coordinates to float
         lat = float(latitude)
         lon = float(longitude)
         
@@ -252,7 +214,7 @@ def add_favorite(location_name, latitude, longitude):
                 "longitude": lon
             })
         if response.status_code == 401:
-            print("Please log in first to add favorites.")
+            print("\nPlease log in first to add favorites.")
             return False
         return response.status_code == 200
     except ValueError:
@@ -263,32 +225,16 @@ def add_favorite(location_name, latitude, longitude):
         return False
 
 def remove_favorite(location_id):
-    """
-    Remove a favorite location for the current user.
-    
-    Args:
-        location_id (int): ID of the favorite location to remove
-    
-    Returns:
-        bool: True if location removed successfully, False otherwise
-    
-    Side-effects:
-        - Makes HTTP DELETE request to favorites endpoint
-        - Prints error message if not logged in
-    """
     try:
         response = session.delete(f"{BASE_URL}/favorites/{location_id}")
         if response.status_code == 401:
-            print("Please log in first to remove favorites.")
+            print("\nPlease log in first to remove favorites.")
             return False
         return response.status_code == 200
     except:
         return False
 
 def get_current_weather(location_id):
-    """
-    Get current weather for a favorite location.
-    """
     try:
         location_id = int(location_id)
         
@@ -313,7 +259,7 @@ def get_current_weather(location_id):
                         json=weather_data
                     )
                     if store_response.status_code == 200:
-                        # Re-fetch the stored weather data to ensure consistent format
+                        # Re-fetch the stored weather data
                         fetch_response = session.get(f"{BASE_URL}/weather/current/{location_id}")
                         if fetch_response.status_code == 200:
                             stored_weather = fetch_response.json()
@@ -335,11 +281,7 @@ def get_current_weather(location_id):
         return False
 
 def get_weather_forecast(location_id):
-    """
-    Get weather forecast for a favorite location.
-    """
     try:
-        # Convert location_id to integer
         location_id = int(location_id)
         
         response = session.get(f"{BASE_URL}/weather/forecast/{location_id}")
@@ -361,7 +303,7 @@ def get_weather_forecast(location_id):
                     store_response = session.post(f"{BASE_URL}/weather/forecast/{location_id}", 
                                           json=forecast_data)
                     if store_response.status_code == 200:
-                        # Re-fetch the stored forecast data to ensure consistent format
+                        # Re-fetch the stored forecast data
                         fetch_response = session.get(f"{BASE_URL}/weather/forecast/{location_id}")
                         if fetch_response.status_code == 200:
                             stored_forecasts = fetch_response.json()
@@ -383,10 +325,6 @@ def get_weather_forecast(location_id):
         return False
 
 def get_weather_history(location_id):
-    """
-    Get weather history for a favorite location.
-    Shows the last 3 hours of historical data.
-    """
     try:
         location_id = int(location_id)
         
@@ -394,9 +332,8 @@ def get_weather_history(location_id):
         if response.status_code == 200:
             history = response.json()
             if history and not isinstance(history, dict):
-                print("\nWeather History (Last 3 Hours):")
-                # Take only the last 3 records since they're ordered by timestamp DESC
-                for record in history[:3]:
+                print("\nWeather History (Last 24 Hours):")
+                for record in history:
                     print(f"\nTime: {time.strftime('%Y-%m-%d %H:%M', time.localtime(record['timestamp']))}")
                     print(f"Temperature: {record['temperature']}°C")
                     print(f"Description: {record['description']}")
@@ -405,17 +342,17 @@ def get_weather_history(location_id):
             else:
                 # Get fresh history data from API
                 history_data = get_history_api_data(location_id)
-                if history_data:
+                if history_data and 'hourly' in history_data:
                     # Store the new history data
                     store_response = session.post(f"{BASE_URL}/weather/history/{location_id}", 
                                           json=history_data)
                     if store_response.status_code == 200:
-                        # Re-fetch the stored history data to ensure consistent format
+                        # Re-fetch the stored history data
                         fetch_response = session.get(f"{BASE_URL}/weather/history/{location_id}")
                         if fetch_response.status_code == 200:
                             stored_history = fetch_response.json()
-                            print("\nWeather History (Last 3 Hours):")
-                            for record in stored_history[:3]:
+                            print("\nWeather History (Last 24 Hours):")
+                            for record in stored_history:
                                 print(f"\nTime: {time.strftime('%Y-%m-%d %H:%M', time.localtime(record['timestamp']))}")
                                 print(f"Temperature: {record['temperature']}°C")
                                 print(f"Description: {record['description']}")
@@ -431,14 +368,14 @@ def get_weather_history(location_id):
         print(f"\nError getting history: {str(e)}")
         return False
 
-
 def main():
     username = ""
     password = ""
     
-    print("\nWelcome to your Weather-Location Manager.\nWould you like to Login or Create an Account?\n")
+    print("\nWelcome to your Weather-Location Manager.\n")
+    print("Would you like to Login or Create an Account?\n")
     
-    while (True):
+    while True:
         print("Menu:")
         print(" 1. Login")
         print(" 2. Create Account")
@@ -450,7 +387,7 @@ def main():
             password = getpass("Password: ")
             
             if login_user(username, password):
-                print(f"\nWelcome, {username}. What would you like to do?\n")
+                print(f"\n\nWelcome, {username}. What would you like to do?\n")
                 break
             else:
                 print("\nUsername or Password incorrect. Please try again.\n")
@@ -461,24 +398,21 @@ def main():
             password = getpass("Password: ")
             
             if register_user(username, password):
-                print(f"\nAccount created. Welcome, {username}. What would you like to do?\n")
+                print(f"\n\nAccount created. Welcome, {username}. What would you like to do?\n")
                 if login_user(username, password): 
                     break
             else:
                 print("\nFailed to create account. Username may already exist.\n")
 
         elif userInput == "3":
-            print("Exiting...")
+            print("\nExiting...")
             time.sleep(1)
             quit()
         
         else:
-            print("Invalid input. Please try again.")
+            print("\nInvalid input. Please try again.")
 
-
-
-
-    while (True):
+    while True:
         print("Menu:")
         print(" 1. Set a New Favorite Location")
         print(" 2. View All Favorite Locations")
@@ -546,4 +480,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
