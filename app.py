@@ -49,7 +49,7 @@ def register():
     
     Returns:
         tuple: (JSON response, HTTP status code)
-            - Success: ({"message": "User registered successfully"}, 201)
+            - Success: ({"message": "User registered successfully"}, 200)
             - Error: ({"error": error_message}, error_code)
     
     Raises:
@@ -201,7 +201,7 @@ def add_favorite():
     
     Returns:
         tuple: (JSON response, HTTP status code)
-            - Success: ({"message": "Location added successfully"}, 201)
+            - Success: ({"message": "Location added successfully"}, 200)
             - Error: ({"error": error_message}, error_code)
     
     Requires:
@@ -384,11 +384,10 @@ def current_weather(location_id):
             ))
             db.commit()
             app.logger.info("Weather data stored successfully.")
-            return jsonify({"message": "Weather data stored successfully"}), 201
+            return jsonify({"message": "Weather data stored successfully"}), 200
         except sqlite3.Error as e:
             app.logger.error(f"Error storing weather data: {e}")
             return jsonify({"error": str(e)}), 500
-    
     # GET request - retrieve latest weather data
     weather = db.execute('''
         SELECT * FROM current_weather 
@@ -447,7 +446,7 @@ def weather_forecast(location_id):
                 ))
             db.commit()
             app.logger.info("Forecast data stored successfully.")
-            return jsonify({"message": "Forecast data stored successfully"}), 201
+            return jsonify({"message": "Forecast data stored successfully"}), 200
         except sqlite3.Error as e:
             app.logger.info(f"Error storing forecast data: {e}")
             return jsonify({"error": str(e)}), 500
@@ -509,7 +508,7 @@ def weather_history(location_id):
                 ))
             db.commit()
             app.logger.info("Historical data stored successfully.")
-            return jsonify({"message": "Historical data stored successfully"}), 201
+            return jsonify({"message": "Historical data stored successfully"}), 200
         except sqlite3.Error as e:
             app.logger.info(f"Error storing historical data: {e}")
             return jsonify({"error": str(e)}), 500
@@ -524,44 +523,6 @@ def weather_history(location_id):
     app.logger.info("Historical data retrieved successfully.")
     return jsonify([dict(h) for h in history]), 200
 
-@app.route('/weather/current/<int:location_id>', methods=['POST'])
-@login_required
-def store_current_weather(location_id):
-    """Store current weather data for a location."""
-    app.logger.info(f"Storing current weather data for location ID: {location_id}")
-    if not request.is_json:
-        app.logger.info("Failed to store weather data: Content type must be JSON")
-        return jsonify({"error": "Content-Type must be application/json"}), 400
-    
-    data = request.get_json()
-    
-    app.logger.info("Storing current weather data.")
-    try:
-        
-        db = get_db()
-        db.execute('''
-            INSERT INTO current_weather 
-            (location_id, timestamp, temperature, feels_like, pressure, 
-            humidity, wind_speed, wind_deg, description, icon)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            location_id,
-            data.get('dt'),
-            data.get('temp'),
-            data.get('feels_like'),
-            data.get('pressure'),
-            data.get('humidity'),
-            data.get('wind_speed'),
-            data.get('wind_deg'),
-            data.get('weather', [{}])[0].get('description'),
-            data.get('weather', [{}])[0].get('icon')
-        ))
-        db.commit()
-        app.logger.info("Weather data stored successfully.")
-        return jsonify({"message": "Weather data stored successfully"}), 201
-    except sqlite3.Error as e:
-        app.logger.info(f"Error storing weather data: {e}")
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/weather/forecast/<int:location_id>', methods=['POST'])
 @login_required
@@ -599,7 +560,7 @@ def store_weather_forecast(location_id):
             ))
         db.commit()
         app.logger.info("Forecast data stored successfully.")
-        return jsonify({"message": "Forecast data stored successfully"}), 201
+        return jsonify({"message": "Forecast data stored successfully"}), 200
     except sqlite3.Error as e:
         app.logger.info(f"Error storing forecast data: {e}")
         return jsonify({"error": str(e)}), 500
@@ -638,7 +599,7 @@ def store_weather_history(location_id):
             ))
         db.commit()
         app.logger.info("Historical data stored successfully.")
-        return jsonify({"message": "Historical data stored successfully"}), 201
+        return jsonify({"message": "Historical data stored successfully"}), 200
     except sqlite3.Error as e:
         app.logger.info(f"Error storing historical data: {e}")
         return jsonify({"error": str(e)}), 500

@@ -6,7 +6,173 @@ from weather_api import get_weather_api_data, get_forecast_api_data, get_history
 
 BASE_URL = "http://127.0.0.1:5000"
 session = Session()
-    
+
+
+load_dotenv()
+
+API_KEY = os.getenv("OPENWEATHER_API_KEY")
+
+
+
+def get_weather_api_data(location_id):
+    """
+    Fetch current weather data from OpenWeatherMap.
+    """
+    try:
+        # Get the location coordinates
+        response = session.get(f"{BASE_URL}/favorites")
+        if response.status_code == 200:
+            favorites = response.json()
+            location = next((loc for loc in favorites if loc["id"] == location_id), None)
+            if not location:
+                print(f"Location with ID {location_id} not found.")
+                return None
+        else:
+            print(f"Failed to fetch favorites: {response.status_code}")
+            return None
+        
+        # Debug logging
+        print("\nAPI Request Details:")
+        print(f"Location ID: {location_id}")
+        print(f"Coordinates: ({location['latitude']}, {location['longitude']})")
+        print(f"API Key present: {'Yes' if API_KEY else 'No'}")
+        if API_KEY:
+            print(f"API Key length: {len(API_KEY)}")
+        
+        # Calling OpenWeatherMap API 3.0
+        url = "https://api.openweathermap.org/data/3.0/onecall"
+        params = {
+            "lat": location["latitude"],
+            "lon": location["longitude"],
+            "exclude": "minutely,hourly,daily,alerts",
+            "appid": API_KEY,
+            "units": "metric"
+        }
+        
+        print("\nMaking API request with parameters:")
+        print(f"URL: {url}")
+        print(f"Latitude: {params['lat']}")
+        print(f"Longitude: {params['lon']}")
+        
+        response = requests.get(url, params=params)
+        print(f"\nResponse Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            return data
+        else:
+            print("\nAPI Error Details:")
+            print(f"Status Code: {response.status_code}")
+            try:
+                error_json = response.json()
+                print(f"Error Response: {error_json}")
+            except:
+                print(f"Raw Response: {response.text}")
+            print(f"Full URL: {response.url}")
+            return None
+            
+    except Exception as e:
+        print(f"\nError getting weather: {str(e)}")
+        return None
+
+def get_forecast_api_data(location_id):
+    """
+    Fetch weather forecast data from OpenWeatherMap.
+    """
+    # Get location coordinates (existing code)
+    response = session.get(f"{BASE_URL}/favorites")
+    if response.status_code == 200:
+        favorites = response.json()
+        location = next((loc for loc in favorites if loc["id"] == location_id), None)
+        if not location:
+            print(f"Location with ID {location_id} not found.")
+            return None
+    else:
+        print(f"Failed to fetch favorites: {response.status_code}")
+        return None
+
+    # Calling OpenWeatherMap API 3.0
+    url = "https://api.openweathermap.org/data/3.0/onecall"
+    params = {
+        "lat": location["latitude"],
+        "lon": location["longitude"],
+        "exclude": "current,minutely,alerts",  # Only get hourly and daily
+        "appid": API_KEY,
+        "units": "metric"
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        return [
+            {
+                "dt": period.get('dt'),
+                "temperature": period.get('temp'),
+                "feels_like": period.get('feels_like'),
+                "pressure": period.get('pressure'),
+                "humidity": period.get('humidity'),
+                "wind_speed": period.get('wind_speed'),
+                "wind_deg": period.get('wind_deg'),
+                "description": period.get('weather', [{}])[0].get('description'),
+                "icon": period.get('weather', [{}])[0].get('icon')
+            }
+            for period in data.get('daily', [])
+        ]
+    else:
+        print(f"Failed to fetch forecast data: {response.status_code}")
+        if response.status_code == 401:
+            print("Invalid API key or unauthorized access. Please check your OpenWeather API key.")
+        return None
+
+def get_history_api_data(location_id):
+    """
+    Fetch historical weather data from OpenWeatherMap.
+    """
+    # Get location coordinates (existing code)
+    response = session.get(f"{BASE_URL}/favorites")
+    if response.status_code == 200:
+        favorites = response.json()
+        location = next((loc for loc in favorites if loc["id"] == location_id), None)
+        if not location:
+            print(f"Location with ID {location_id} not found.")
+            return None
+    else:
+        print(f"Failed to fetch favorites: {response.status_code}")
+        return None
+
+    # Calling OpenWeatherMap API 3.0
+    url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
+    params = {
+        "lat": location["latitude"],
+        "lon": location["longitude"],
+        "dt": int(time.time()) - 86400,  # 24 hours ago
+        "appid": API_KEY,
+        "units": "metric"
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        return [
+            {
+                "timestamp": hour.get('dt'),
+                "temperature": hour.get('temp'),
+                "feels_like": hour.get('feels_like'),
+                "pressure": hour.get('pressure'),
+                "humidity": hour.get('humidity'),
+                "wind_speed": hour.get('wind_speed'),
+                "wind_deg": hour.get('wind_deg'),
+                "description": hour.get('weather', [{}])[0].get('description'),
+                "icon": hour.get('weather', [{}])[0].get('icon')
+            }
+            for hour in data.get('data', [])
+        ]
+    else:
+        print(f"Failed to fetch historical data: {response.status_code}")
+        if response.status_code == 401:
+            print("Invalid API key or unauthorized access. Please check your OpenWeather API key.")
+        return None
+
 def register_user(username, password):
     """
     Register a new user with the application.
@@ -21,9 +187,9 @@ def register_user(username, password):
     Side-effects:
         - Makes HTTP POST request to register endpoint
     """
-    response = requests.post(f"{BASE_URL}/register", 
+    response = session.post(f"{BASE_URL}/register", 
         json={"username": username, "password": password})
-    return response.status_code == 201
+    return response.status_code == 200
 
 def login_user(username, password):
     """
@@ -106,7 +272,7 @@ def add_favorite(location_name, latitude, longitude):
         if response.status_code == 401:
             print("Please log in first to add favorites.")
             return False
-        return response.status_code == 201
+        return response.status_code == 200
     except:
         return False
 
@@ -136,37 +302,41 @@ def remove_favorite(location_id):
 def get_current_weather(location_id):
     """
     Get current weather for a favorite location.
-    
-    Args:
-        location_id (int): ID of the favorite location
-    
-    Returns:
-        bool: True if weather data retrieved and displayed successfully,
-              False otherwise
-    
-    Side-effects:
-        - Makes HTTP GET request to weather endpoint
-        - Makes API call to OpenWeatherMap if local data not available
-        - Prints weather information to console
     """
     try:
+        location_id = int(location_id)
+        
         response = session.get(f"{BASE_URL}/weather/current/{location_id}")
         if response.status_code == 200:
             weather = response.json()
             if 'error' not in weather:
                 print("\nCurrent Weather:")
-                print(f"Temperature: {weather['temperature']}°K")
-                print(f"Feels Like: {weather['feels_like']}°K")
+                print(f"Temperature: {weather['temperature']}°C")
+                print(f"Feels Like: {weather['feels_like']}°C")
                 print(f"Description: {weather['description']}")
                 print(f"Humidity: {weather['humidity']}%")
                 print(f"Wind Speed: {weather['wind_speed']} m/s")
                 return True
             else:
-                weather_data = get_weather_api_data(location_id) 
+                # Get fresh weather data from API
+                weather_data = get_weather_api_data(location_id)
                 if weather_data:
-                    response = session.post(f"{BASE_URL}/weather/current/{location_id}", 
-                                          json=weather_data)
-                    return response.status_code == 201
+                    # Store the new weather data
+                    store_response = session.post(
+                        f"{BASE_URL}/weather/current/{location_id}", 
+                        json=weather_data
+                    )
+                    if store_response.status_code == 200:
+                        # Display the weather data
+                        print("\nCurrent Weather:")
+                        print(f"Temperature: {weather_data['temp']}°C")
+                        print(f"Feels Like: {weather_data['feels_like']}°C")
+                        print(f"Description: {weather_data['weather'][0]['description']}")
+                        print(f"Humidity: {weather_data['humidity']}%")
+                        print(f"Wind Speed: {weather_data['wind_speed']} m/s")
+                        return True
+                    else:
+                        print(f"\nFailed to store weather data: {store_response.status_code}")
                 return False
         return False
     except Exception as e:
@@ -206,7 +376,7 @@ def get_weather_forecast(location_id):
                 if forecast_data:
                     response = session.post(f"{BASE_URL}/weather/forecast/{location_id}", 
                                           json=forecast_data)
-                    return response.status_code == 201
+                    return response.status_code == 200
                 return False
         return False
     except Exception as e:
@@ -246,7 +416,7 @@ def get_weather_history(location_id):
                 if history_data:
                     response = session.post(f"{BASE_URL}/weather/history/{location_id}", 
                                           json=history_data)
-                    return response.status_code == 201
+                    return response.status_code == 200
                 return False
         return False
     except Exception as e:
