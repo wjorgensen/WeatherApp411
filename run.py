@@ -1,4 +1,6 @@
+import os
 import time
+from dotenv import load_dotenv
 import requests
 from requests.sessions import Session
 from getpass import getpass

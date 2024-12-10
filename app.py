@@ -361,6 +361,8 @@ def current_weather(location_id):
             return jsonify({"error": "Content-Type must be application/json"}), 400
         
         data = request.get_json()
+        app.logger.info("Received current weather data.")
+        app.logger.info(data)
         current = data.get('current', {})
         
         try:
@@ -420,6 +422,8 @@ def weather_forecast(location_id):
             return jsonify({"error": "Content-Type must be application/json"}), 400
         
         data = request.get_json()
+        app.logger.info("Received forecast data.")
+        app.logger.info(data)
         current_time = data.get('current', {}).get('dt')
         
         try:
@@ -486,6 +490,8 @@ def weather_history(location_id):
             return jsonify({"error": "Content-Type must be application/json"}), 400
         
         data = request.get_json()
+        app.logger.info("Received historical data.")
+        app.logger.info(data)
         
         try:
             for hourly in data.get('hourly', []):
